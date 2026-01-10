@@ -297,12 +297,12 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
               {/* Tracking & Actions */}
               <div className="space-y-4 pt-4 border-t border-white/10">
-                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Rastreamento e status</h3>
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Acompanhamento e estado</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Status da localização</span>
+                      <span className="text-xs text-zinc-500">Estado da localização</span>
                       <span className={cn("text-sm font-bold flex items-center gap-2", 
                         locationAlreadySent ? "text-emerald-500" : "text-zinc-400"
                       )}>
