@@ -29,6 +29,7 @@ export class MemStorage implements IStorage {
           "booking_0": {
               "ref": "BAHOL-24591526",
               "status": "ACON",
+              "arrivaldate": "",
               "departuredate": "2025-11-08T20:05:00",
               "passengername": "Mrs Mary Ann Smith",
               "vehicle": "Shared Shuttle"
@@ -36,6 +37,7 @@ export class MemStorage implements IStorage {
           "booking_1": {
               "ref": "BAHOL-999999",
               "status": "PEND",
+              "arrivaldate": "",
               "departuredate": "2025-11-08T21:00:00",
               "passengername": "Mr John Doe",
               "vehicle": "Private Taxi"

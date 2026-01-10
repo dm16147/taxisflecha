@@ -5,11 +5,10 @@ import { eq, not } from "drizzle-orm";
 
 export async function POST(
   request: Request,
-  { params }: { params: { ref: string } }
+  { params }: { params: Promise<{ ref: string }> }
 ) {
   try {
-    const parm = await params;
-    const ref = parm.ref;
+    const { ref } = await params;
 
     const result = await db
       .update(bookingsStatus)

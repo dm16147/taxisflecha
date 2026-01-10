@@ -6,10 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function POST(
     request: Request,
-    { params }: { params: { ref: string } }
+    { params }: { params: Promise<{ ref: string }> }
 ) {
     try {
-        const { ref } = params;
+        const { ref } = await params;
         const { driverName } = await request.json();
 
         if (!driverName) {

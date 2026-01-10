@@ -7,12 +7,10 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
     request: Request,
-    { params }: { params: { ref: string } }
+    { params }: { params: Promise<{ ref: string }> }
 ) {
     try {
-
-        const parm = await params;
-        const ref = parm.ref;
+        const { ref } = await params;
 
         const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`
 
