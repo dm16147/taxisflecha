@@ -1,5 +1,4 @@
-import { Car, Menu, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Car } from "lucide-react";
 
 export function Header() {
   return (
@@ -10,7 +9,7 @@ export function Header() {
             <Car className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold font-display tracking-tight text-white hidden sm:block">
-            Transfer<span className="text-primary">Ops</span>
+            Taxis<span className="text-primary">Flecha</span>
           </span>
         </div>
       </div>

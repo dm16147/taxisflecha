@@ -40,7 +40,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
 
         if (!response.ok) {
             console.error("External API error:", response.statusText)
-            return NextResponse.json({ message: "Failed to fetch data from external API" }, { status: response.status });
+            return NextResponse.json({ message: "Falha ao obter dados da API externa" }, { status: response.status });
         }
 
         const bodyText = await response.text();

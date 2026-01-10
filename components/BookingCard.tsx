@@ -19,7 +19,7 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
   const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
   const timeDisplay = isValidDate ? format(parsedDate as Date, "HH:mm") : "--:--";
   const dateDisplay = isValidDate ? format(parsedDate as Date, "dd MMM yyyy") : "TBC";
-  const tripLabel = isArrival ? "Arrival" : "Departure";
+  const tripLabel = isArrival ? "Chegada" : "Partida";
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -73,7 +73,7 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
       <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
       <span className="text-xs text-zinc-500 font-mono">{dateDisplay}</span>
          <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-            View Details →
+            Ver detalhes →
          </span>
       </div>
     </motion.div>

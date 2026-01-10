@@ -43,22 +43,22 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
   const itinerary = booking?.arrival
     ? {
         type: "arrival" as const,
-        fromLabel: "Pick Up",
+        fromLabel: "Recolha",
         from: booking.arrival.fromairport,
-        toLabel: "Drop Off",
+        toLabel: "Entrega",
         to: booking.arrival.accommodationname,
         date: booking.arrival.arrivaldate,
-        dateTitle: "Arrival Date",
+        dateTitle: "Data de chegada",
       }
     : booking?.departure
       ? {
           type: "departure" as const,
-          fromLabel: "Pick Up",
+          fromLabel: "Recolha",
           from: booking.departure.accommodationname,
-          toLabel: "Airport",
+          toLabel: "Aeroporto",
           to: booking.departure.toairport,
           date: booking.departure.pickupdate || booking.departure.departuredate || "",
-          dateTitle: booking.departure.pickupdate ? "Pickup Time" : "Departure Date",
+          dateTitle: booking.departure.pickupdate ? "Hora da recolha" : "Data de partida",
         }
       : null;
 
@@ -89,14 +89,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     assignDriver.mutate({ bookingRef: refId, driverName: selectedDriver }, {
       onSuccess: () => {
         toast({
-          title: "Driver Assigned",
-          description: `${selectedDriver} has been assigned to booking ${refId}`,
+          title: "Motorista atribuído",
+          description: `${selectedDriver} foi atribuído à reserva ${refId}`,
         });
       },
       onError: (err) => {
         toast({
           variant: "destructive",
-          title: "Assignment Failed",
+          title: "Falha na atribuição",
           description: err.message
         });
       }
@@ -108,14 +108,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     forceLocation.mutate({ bookingRef: refId }, {
       onSuccess: (data) => {
         toast({ 
-          title: data.autoSendLocation ? "Auto-Send Enabled" : "Auto-Send Disabled",
+          title: data.autoSendLocation ? "Envio automático ativado" : "Envio automático desativado",
           description: data.message 
         });
       },
       onError: (err) => {
         toast({
           variant: "destructive",
-          title: "Failed to Toggle Auto-Send",
+          title: "Falha ao alternar o envio automático",
           description: err.message
         });
       }
@@ -127,14 +127,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     sendLocation.mutate({ bookingRef: refId }, {
       onSuccess: (data) => {
         toast({
-          title: "Location Sent",
-          description: `Location ${data.location} sent successfully`,
+          title: "Localização enviada",
+          description: `Localização ${data.location} enviada com sucesso`,
         });
       },
       onError: (err) => {
         toast({
           variant: "destructive",
-          title: "Failed to Send Location",
+          title: "Falha ao enviar localização",
           description: err.message
         });
       }
@@ -175,7 +175,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
             <div className="flex-1 p-6 space-y-8">
               {/* Route Info */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Itinerary</h3>
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Itinerário</h3>
                 {itinerary ? (
                   <div className="bg-zinc-900/50 rounded-xl p-4 border border-white/5 space-y-6 relative overflow-hidden">
                     <div className="absolute top-0 left-6 bottom-0 w-0.5 bg-zinc-800/50 border-r border-dashed border-zinc-700" />
@@ -187,7 +187,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         <p className="font-medium text-zinc-200">{itinerary.from}</p>
                         <div className="flex items-center gap-2 mt-1 text-xs text-primary">
                           <Plane className="h-3 w-3" />
-                          <span>{itinerary.type === "arrival" ? "Flight Arrival" : "Flight Departure"}</span>
+                          <span>{itinerary.type === "arrival" ? "Chegada do voo" : "Partida do voo"}</span>
                         </div>
                       </div>
                     </div>
@@ -199,14 +199,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         <p className="font-medium text-zinc-200">{itinerary.to}</p>
                         <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500">
                           <Hotel className="h-3 w-3" />
-                          <span>{itinerary.type === "arrival" ? "Accommodation" : "Airport"}</span>
+                          <span>{itinerary.type === "arrival" ? "Alojamento" : "Aeroporto"}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-zinc-900/40 rounded-xl p-4 border border-white/5 text-zinc-500">
-                    No itinerary data available for this booking.
+                    Não há dados de itinerário disponíveis para esta reserva.
                   </div>
                 )}
               </div>
@@ -225,10 +225,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
                   <div className="flex items-center gap-2 text-zinc-500 mb-2">
                     <Users className="h-4 w-4" />
-                    <span className="text-xs font-medium">Passengers</span>
+                    <span className="text-xs font-medium">Passageiros</span>
                   </div>
                   <p className="font-semibold text-zinc-200">
-                    {booking?.general.adults} Adults, {booking?.general.children} Kids
+                    {booking?.general.adults} Adultos, {booking?.general.children} Crianças
                   </p>
                 </div>
               </div>
@@ -236,16 +236,16 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
               {/* Assignment Section */}
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Driver Assignment</h3>
+                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Atribuição de motorista</h3>
                   {bookingStatus?.driver ? (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-xs font-medium text-emerald-500">Assigned</span>
+                      <span className="text-xs font-medium text-emerald-500">Atribuído</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                      <span className="text-xs font-medium text-amber-500">Action Required</span>
+                      <span className="text-xs font-medium text-amber-500">Ação necessária</span>
                     </div>
                   )}
                 </div>
@@ -254,7 +254,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   <div className="bg-emerald-500/10 rounded-xl p-5 border border-emerald-500/20">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-xs text-emerald-500/70 mb-1 block">Assigned Driver</label>
+                        <label className="text-xs text-emerald-500/70 mb-1 block">Motorista designado</label>
                         <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver}</p>
                       </div>
                       <Button 
@@ -263,17 +263,17 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         onClick={() => setSelectedDriver("")}
                         className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
                       >
-                        Reassign
+                        Reatribuir
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-card rounded-xl p-5 border border-white/5 shadow-inner">
-                    <label className="text-sm text-zinc-400 mb-2 block">Select Driver</label>
+                    <label className="text-sm text-zinc-400 mb-2 block">Selecionar motorista</label>
                     <div className="flex gap-2">
                       <Select value={selectedDriver} onValueChange={setSelectedDriver}>
                         <SelectTrigger className="w-full bg-zinc-900 border-zinc-700">
-                          <SelectValue placeholder="Choose a driver..." />
+                          <SelectValue placeholder="Escolha um motorista..." />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-800">
                           {drivers.map(driver => (
@@ -288,7 +288,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         disabled={assignDriver.isPending || !selectedDriver}
                         className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
                       >
-                        {assignDriver.isPending ? "Assigning..." : "Assign"}
+                        {assignDriver.isPending ? "A atribuir..." : "Atribuir"}
                       </Button>
                     </div>
                   </div>
@@ -297,19 +297,19 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
               {/* Tracking & Actions */}
               <div className="space-y-4 pt-4 border-t border-white/10">
-                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Tracking & Status</h3>
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Rastreamento e status</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Location Status</span>
+                      <span className="text-xs text-zinc-500">Status da localização</span>
                       <span className={cn("text-sm font-bold flex items-center gap-2", 
                         locationAlreadySent ? "text-emerald-500" : "text-zinc-400"
                       )}>
                         <span className={cn("h-1.5 w-1.5 rounded-full", 
                           locationAlreadySent ? "bg-emerald-500" : "bg-zinc-600"
                         )} />
-                        {locationAlreadySent ? "Sent" : "Pending"}
+                        {locationAlreadySent ? "Enviado" : "Pendente"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -324,11 +324,11 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Auto Send</span>
+                      <span className="text-xs text-zinc-500">Envio automático</span>
                       <span className={cn("text-sm font-bold", 
                         bookingStatus?.autoSendLocation ? "text-emerald-500" : "text-zinc-400"
                       )}>
-                        {bookingStatus?.autoSendLocation ? "Enabled" : "Disabled"}
+                        {bookingStatus?.autoSendLocation ? "Ativado" : "Desativado"}
                       </span>
                     </div>
                   </div>
@@ -341,10 +341,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <MapPin className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold text-white">Ready to Send Location</h4>
+                          <h4 className="text-sm font-semibold text-white">Pronto para enviar localização</h4>
                         </div>
                         <p className="text-xs text-zinc-400">
-                          Transfer time is within 30 minutes. Send location to notify the passenger.
+                          O tempo de transferência é de 30 minutos. Envie a localização para notificar o passageiro.
                         </p>
                       </div>
                       <Button
@@ -356,12 +356,12 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         {sendLocation.isPending ? (
                           <>
                             <RotateCw className="h-3 w-3 mr-1.5 animate-spin" />
-                            Sending...
+                            A enviar...
                           </>
                         ) : (
                           <>
                             <Send className="h-3 w-3 mr-1.5" />
-                            Send Location
+                            Enviar localização
                           </>
                         )}
                       </Button>

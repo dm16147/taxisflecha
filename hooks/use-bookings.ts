@@ -15,7 +15,7 @@ export function useBookings(type: BookingType, dateFrom?: string, dateTo?: strin
       const response = await fetch(`/api/bookings/${type}${query ? `?${query}` : ""}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch bookings");
+        throw new Error("Falha ao obter reservas");
       }
 
       return response.json();
@@ -32,7 +32,7 @@ export function useBookingDetail(ref: string | null) {
       const response = await fetch(`/api/bookings/${ref}`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch booking detail");
+        throw new Error("Falha ao obter detalhes da reserva");
       }
 
       return response.json();
@@ -53,7 +53,7 @@ export function useAssignDriver() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to assign driver');
+        throw new Error('Falha ao atribuir o motorista');
       }
 
       return response.json();
@@ -75,7 +75,7 @@ export function useSendLocation() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send location');
+        throw new Error(errorData.message || 'Falha ao enviar localização');
       }
 
       return response.json();
@@ -97,7 +97,7 @@ export function useForceLocation() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle auto-send location');
+        throw new Error('Falha ao alternar o envio automático da localização');
       }
 
       return response.json();

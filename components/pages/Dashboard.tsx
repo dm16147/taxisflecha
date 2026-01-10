@@ -39,8 +39,8 @@ export default function Dashboard() {
       <main className="container px-4 sm:px-6 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-display font-bold text-white mb-2">Reservations</h1>
-            <p className="text-zinc-400">Manage daily transfers and assignments.</p>
+            <h1 className="text-3xl font-display font-bold text-white mb-2">Reservas</h1>
+            <p className="text-zinc-400">Gerencie transfers diárias.</p>
           </div>
 
           <div className="flex gap-2">
@@ -90,13 +90,13 @@ export default function Dashboard() {
               </div>
             ) : error ? (
               <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
-                Failed to load bookings. Please try again later.
+                Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
               </div>
             ) : bookingList.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-zinc-300">No departures found</h3>
-                <p className="text-zinc-500">There are no bookings scheduled for this date range.</p>
+                <h3 className="text-lg font-medium text-zinc-300">Não foram encontradas partidas</h3>
+                <p className="text-zinc-500">Não há reservas agendadas para este intervalo de datas.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -129,13 +129,13 @@ export default function Dashboard() {
               </div>
             ) : error ? (
               <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
-                Failed to load bookings. Please try again later.
+                Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
               </div>
             ) : bookingList.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-zinc-300">No arrivals found</h3>
-                <p className="text-zinc-500">There are no bookings scheduled for this date range.</p>
+                <h3 className="text-lg font-medium text-zinc-300">Nenhuma chegada encontrada</h3>
+                <p className="text-zinc-500">Não há reservas agendadas para este intervalo de datas.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -150,12 +150,6 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="something">
-            <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
-              <p className="text-zinc-500">Arrivals view would be implemented similarly to Departures.</p>
-            </div>
           </TabsContent>
         </Tabs>
       </main>
