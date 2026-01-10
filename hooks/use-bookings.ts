@@ -58,7 +58,8 @@ export function useAssignDriver() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["booking", variables.bookingRef] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
@@ -102,7 +103,8 @@ export function useForceLocation() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["booking", variables.bookingRef] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });

@@ -40,7 +40,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold text-white mb-2">Reservas</h1>
-            <p className="text-zinc-400">Gerencie transfers diárias.</p>
+            <p className="text-zinc-400">Gerir transfers diários.</p>
           </div>
 
           <div className="flex gap-2">
@@ -64,13 +64,13 @@ export default function Dashboard() {
               value="departures"
               className="px-6 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium transition-all"
             >
-              Departures
+              Partidas
             </TabsTrigger>
             <TabsTrigger
               value="arrivals"
               className="px-6 py-2.5 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium transition-all"
             >
-              Arrivals
+              Chegadas
             </TabsTrigger>
           </TabsList>
 
