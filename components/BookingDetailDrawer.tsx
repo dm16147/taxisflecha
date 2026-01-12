@@ -64,7 +64,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
   const itineraryDate = itinerary?.date ? new Date(itinerary.date) : null;
   const formattedItineraryDate = itineraryDate && !isNaN(itineraryDate.getTime())
-    ? format(itineraryDate, "dd MMM yyyy")
+    ? format(itineraryDate, "dd MMM yyyy HH:mm")
     : "TBC";
 
   // Check if we're within 30 minutes before the booking time
