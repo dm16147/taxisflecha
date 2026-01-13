@@ -37,44 +37,45 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
   const { toast } = useToast();
 
   const [selectedDriver, setSelectedDriver] = useState<string>("");
+  const [isReassigning, setIsReassigning] = useState<boolean>(false);
 
   const booking = data?.booking;
   const bookingStatus = data?.bookingStatus;
   const itinerary = booking?.arrival
     ? {
-        type: "arrival" as const,
-        fromLabel: "Recolha",
-        from: booking.arrival.fromairport,
-        toLabel: "Entrega",
-        to: booking.arrival.accommodationname,
-        date: booking.arrival.arrivaldate,
-        dateTitle: "Data de chegada",
-      }
+      type: "arrival" as const,
+      fromLabel: "Recolha",
+      from: booking.arrival.fromairport,
+      toLabel: "Entrega",
+      to: booking.arrival.accommodationname,
+      date: booking.arrival.arrivaldate,
+      dateTitle: "Data de chegada",
+    }
     : booking?.departure
       ? {
-          type: "departure" as const,
-          fromLabel: "Recolha",
-          from: booking.departure.accommodationname,
-          toLabel: "Aeroporto",
-          to: booking.departure.toairport,
-          date: booking.departure.pickupdate || booking.departure.departuredate || "",
-          dateTitle: booking.departure.pickupdate ? "Hora da recolha" : "Data de partida",
-        }
+        type: "departure" as const,
+        fromLabel: "Recolha",
+        from: booking.departure.accommodationname,
+        toLabel: "Aeroporto",
+        to: booking.departure.toairport,
+        date: booking.departure.pickupdate || booking.departure.departuredate || "",
+        dateTitle: booking.departure.pickupdate ? "Hora da recolha" : "Data de partida",
+      }
       : null;
 
   const itineraryDate = itinerary?.date ? new Date(itinerary.date) : null;
-  
+
   const formattedItineraryDate = (() => {
     if (!itineraryDate || isNaN(itineraryDate.getTime())) return "TBC";
-    
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateOnly = new Date(itineraryDate.getFullYear(), itineraryDate.getMonth(), itineraryDate.getDate());
-    
+
     const timeStr = format(itineraryDate, "HH:mm");
-    
+
     if (dateOnly.getTime() === today.getTime()) {
       return `Hoje ${timeStr}`;
     } else if (dateOnly.getTime() === tomorrow.getTime()) {
@@ -98,17 +99,19 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     } else if (open) {
       setSelectedDriver("");
     }
+    if (open) setIsReassigning(false);
   }, [open, bookingStatus?.driver]);
 
   const handleAssignDriver = () => {
     if (!refId || !selectedDriver) return;
-    
+
     assignDriver.mutate({ bookingRef: refId, driverName: selectedDriver }, {
       onSuccess: () => {
         toast({
           title: "Motorista atribuído",
           description: `${selectedDriver} foi atribuído à reserva ${refId}`,
         });
+        setIsReassigning(false);
       },
       onError: (err) => {
         toast({
@@ -124,9 +127,9 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     if (!refId) return;
     forceLocation.mutate({ bookingRef: refId }, {
       onSuccess: (data) => {
-        toast({ 
+        toast({
           title: data.autoSendLocation ? "Envio automático ativado" : "Envio automático desativado",
-          description: data.message 
+          description: data.message
         });
       },
       onError: (err) => {
@@ -138,6 +141,18 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       }
     });
   };
+
+  const handleReassignDrive = () => {
+    // Enter reassign mode and clear the local selection only; do NOT mutate cached bookingStatus
+    setSelectedDriver("");
+    setIsReassigning(true);
+  }
+
+  const handleCancelReassign = () => {
+    // restore the selectedDriver from the cached bookingStatus (if any) and exit reassign mode
+    setSelectedDriver(bookingStatus?.driver ?? "");
+    setIsReassigning(false);
+  }
 
   const handleSendLocation = () => {
     if (!refId) return;
@@ -171,22 +186,22 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="relative h-40 bg-zinc-900 overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent mix-blend-overlay" />
-               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80')] bg-cover bg-center opacity-10" />
-               
-               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 to-transparent">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider", 
-                      booking?.general.status === "CONFIRMED" ? "bg-emerald-500 text-emerald-950" : "bg-zinc-700 text-zinc-300"
-                    )}>
-                      {booking?.general.status}
-                    </span>
-                    <span className="text-zinc-400 text-xs font-mono">{booking?.general.ref}</span>
-                  </div>
-                  <h2 className="text-2xl font-display font-bold text-white shadow-sm">
-                    {booking?.general.passengername}
-                  </h2>
-               </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent mix-blend-overlay" />
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80')] bg-cover bg-center opacity-10" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 to-transparent">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                    booking?.general.status === "CONFIRMED" ? "bg-emerald-500 text-emerald-950" : "bg-zinc-700 text-zinc-300"
+                  )}>
+                    {booking?.general.status}
+                  </span>
+                  <span className="text-zinc-400 text-xs font-mono">{booking?.general.ref}</span>
+                </div>
+                <h2 className="text-2xl font-display font-bold text-white shadow-sm">
+                  {booking?.general.passengername}
+                </h2>
+              </div>
             </div>
 
             <div className="flex-1 p-6 space-y-8">
@@ -196,7 +211,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 {itinerary ? (
                   <div className="bg-zinc-900/50 rounded-xl p-4 border border-white/5 space-y-6 relative overflow-hidden">
                     <div className="absolute top-0 left-6 bottom-0 w-0.5 bg-zinc-800/50 border-r border-dashed border-zinc-700" />
-                    
+
                     <div className="relative z-10 flex gap-4">
                       <div className="mt-1 h-3 w-3 rounded-full bg-primary ring-4 ring-zinc-900" />
                       <div>
@@ -266,25 +281,8 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                     </div>
                   )}
                 </div>
-                
-                {bookingStatus?.driver ? (
-                  <div className="bg-emerald-500/10 rounded-xl p-5 border border-emerald-500/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-xs text-emerald-500/70 mb-1 block">Motorista atribuído</label>
-                        <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver}</p>
-                      </div>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedDriver("")}
-                        className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
-                      >
-                        Reatribuir
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
+
+                {(isReassigning || !bookingStatus?.driver) ? (
                   <div className="bg-card rounded-xl p-5 border border-white/5 shadow-inner">
                     <label className="text-sm text-zinc-400 mb-2 block">Selecionar motorista</label>
                     <div className="flex gap-2">
@@ -300,12 +298,40 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button 
-                        onClick={handleAssignDriver} 
-                        disabled={assignDriver.isPending || !selectedDriver}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={handleAssignDriver}
+                          disabled={assignDriver.isPending || !selectedDriver}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-lg shadow-primary/20"
+                        >
+                          {assignDriver.isPending ? "A atribuir..." : "Atribuir"}
+                        </Button>
+                        {isReassigning && (
+                          <Button
+                            variant="ghost"
+                            onClick={handleCancelReassign}
+                            className="text-zinc-400"
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-500/10 rounded-xl p-5 border border-emerald-500/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-xs text-emerald-500/70 mb-1 block">Motorista atribuído</label>
+                        <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleReassignDrive}
+                        className="border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
                       >
-                        {assignDriver.isPending ? "A atribuir..." : "Atribuir"}
+                        Reatribuir
                       </Button>
                     </div>
                   </div>
@@ -315,15 +341,15 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
               {/* Tracking & Actions */}
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Acompanhamento e estado</h3>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-xs text-zinc-500">Estado da localização</span>
-                      <span className={cn("text-sm font-bold flex items-center gap-2", 
+                      <span className={cn("text-sm font-bold flex items-center gap-2",
                         locationAlreadySent ? "text-emerald-500" : "text-zinc-400"
                       )}>
-                        <span className={cn("h-1.5 w-1.5 rounded-full", 
+                        <span className={cn("h-1.5 w-1.5 rounded-full",
                           locationAlreadySent ? "bg-emerald-500" : "bg-zinc-600"
                         )} />
                         {locationAlreadySent ? "Enviado" : "Pendente"}
@@ -331,7 +357,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-zinc-400">Auto</span>
-                      <Switch 
+                      <Switch
                         checked={bookingStatus?.autoSendLocation ?? false}
                         onCheckedChange={handleForceLocation}
                         disabled={forceLocation.isPending}
@@ -342,7 +368,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-xs text-zinc-500">Envio automático</span>
-                      <span className={cn("text-sm font-bold", 
+                      <span className={cn("text-sm font-bold",
                         bookingStatus?.autoSendLocation ? "text-emerald-500" : "text-zinc-400"
                       )}>
                         {bookingStatus?.autoSendLocation ? "Ativado" : "Desativado"}
