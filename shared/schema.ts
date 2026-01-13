@@ -100,11 +100,8 @@ export type BookingDetailWithStatusResponse = z.infer<typeof bookingDetailWithSt
 
 // Mock drivers list for assignment
 export const drivers = [
-  "Carlos Rodriguez",
-  "Maria Santos",
-  "Jose Garcia",
-  "Ana Martinez",
-  "Luis Fernandez"
+  "Luis Pinto",
+  "Alvaro Pinto",
 ];
 
 export const assignDriverSchema = z.object({
