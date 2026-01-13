@@ -271,7 +271,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   <div className="bg-emerald-500/10 rounded-xl p-5 border border-emerald-500/20">
                     <div className="flex items-center justify-between">
                       <div>
-                        <label className="text-xs text-emerald-500/70 mb-1 block">Motorista designado</label>
+                        <label className="text-xs text-emerald-500/70 mb-1 block">Motorista atribuído</label>
                         <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver}</p>
                       </div>
                       <Button 
