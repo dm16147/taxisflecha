@@ -63,9 +63,26 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       : null;
 
   const itineraryDate = itinerary?.date ? new Date(itinerary.date) : null;
-  const formattedItineraryDate = itineraryDate && !isNaN(itineraryDate.getTime())
-    ? format(itineraryDate, "dd MMM yyyy HH:mm")
-    : "TBC";
+  
+  const formattedItineraryDate = (() => {
+    if (!itineraryDate || isNaN(itineraryDate.getTime())) return "TBC";
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(itineraryDate.getFullYear(), itineraryDate.getMonth(), itineraryDate.getDate());
+    
+    const timeStr = format(itineraryDate, "HH:mm");
+    
+    if (dateOnly.getTime() === today.getTime()) {
+      return `Hoje ${timeStr}`;
+    } else if (dateOnly.getTime() === tomorrow.getTime()) {
+      return `Amanhã ${timeStr}`;
+    } else {
+      return format(itineraryDate, "dd MMM yyyy HH:mm");
+    }
+  })();
 
   // Check if we're within 30 minutes before the booking time
   const now = new Date();
