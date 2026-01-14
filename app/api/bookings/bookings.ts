@@ -11,17 +11,11 @@ function formatDateForApi(date: string): string {
 
 export async function retrieveBookings(type: BookingType, dateFrom: string | null, dateTo: string | null, pageNumber: string | null) {
     try {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const formattedDateFrom = formatDateForApi(dateFrom ?? yesterday.toISOString())
-        const formattedDateTo = formatDateForApi(dateTo ?? tomorrow.toISOString())
+        const formattedDateFrom = formatDateForApi(dateFrom!)
+        const formattedDateTo = formatDateForApi(dateTo!)
         const pageNum = pageNumber ?? 1;
 
-        // const url = `${process.env.VITE_BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
-        const url = `${process.env.VITE_BASE_API_URL}/bookings/search/${type}/since/2026-01-04T09:30:00/until/2026-01-08T09:30:00/page/${pageNum}`;
+        const url = `${process.env.VITE_BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
         const externalApiUrl = new URL(url);
 
         const init = {
@@ -44,7 +38,9 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         }
 
         const bodyText = await response.text();
+        console.log("Body ", bodyText)
         if (!bodyText) {
+            console.error("No body:", response.statusText)
             return NextResponse.json({ bookings: {}, warnings: [] });
         }
 
