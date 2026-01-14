@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
 import { Search, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BookingCard } from "@/components/BookingCard";
@@ -18,9 +18,14 @@ export default function Dashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<BookingType>("departures");
 
-  // Mock dates for search - using today
-  const today = format(new Date(), "yyyy-MM-dd");
-  const { data, isLoading, error } = useBookings(activeTab, today, today);
+  // Date range state
+  const initialStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const initialEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+  const [dateFrom, setDateFrom] = useState(format(initialStart, "yyyy-MM-dd"));
+  const [dateTo, setDateTo] = useState(format(initialEnd, "yyyy-MM-dd"));
+
+  const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo);
 
   const handleBookingClick = (ref: string) => {
     setSelectedBookingRef(ref);
@@ -51,10 +56,60 @@ export default function Dashboard() {
                 className="pl-9 w-full md:w-64 bg-zinc-900/50 border-zinc-800 focus:border-primary/50 focus:ring-primary/20"
               />
             </div>
-            <Button variant="outline" className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-zinc-900/50 border border-zinc-800 text-zinc-200 px-2 py-1 rounded-lg"
+              />
+              <span className="text-zinc-400">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="bg-zinc-900/50 border border-zinc-800 text-zinc-200 px-2 py-1 rounded-lg"
+              />
+
+              <Button
+                variant="outline"
+                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                onClick={() => {
+                  const start = startOfWeek(new Date(dateFrom), { weekStartsOn: 1 });
+                  const end = endOfWeek(new Date(dateFrom), { weekStartsOn: 1 });
+                  setDateFrom(format(start, "yyyy-MM-dd"));
+                  setDateTo(format(end, "yyyy-MM-dd"));
+                }}
+              >
+                This week
+              </Button>
+
+              <Button
+                variant="outline"
+                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                onClick={() => {
+                  const prevStart = startOfWeek(addWeeks(new Date(dateFrom), -1), { weekStartsOn: 1 });
+                  const prevEnd = endOfWeek(addWeeks(new Date(dateFrom), -1), { weekStartsOn: 1 });
+                  setDateFrom(format(prevStart, "yyyy-MM-dd"));
+                  setDateTo(format(prevEnd, "yyyy-MM-dd"));
+                }}
+              >
+                Prev week
+              </Button>
+
+              <Button
+                variant="outline"
+                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                onClick={() => {
+                  const nextStart = startOfWeek(addWeeks(new Date(dateFrom), 1), { weekStartsOn: 1 });
+                  const nextEnd = endOfWeek(addWeeks(new Date(dateFrom), 1), { weekStartsOn: 1 });
+                  setDateFrom(format(nextStart, "yyyy-MM-dd"));
+                  setDateTo(format(nextEnd, "yyyy-MM-dd"));
+                }}
+              >
+                Next week
+              </Button>
+            </div>
           </div>
         </div>
 
