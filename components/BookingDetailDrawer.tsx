@@ -50,7 +50,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       toLabel: "Entrega",
       to: booking.arrival.accommodationname,
       date: booking.arrival.arrivaldate,
-      dateTitle: "Data de chegada",
+      dateTitle: "Data e hora da recolha",
     }
     : booking?.departure
       ? {
@@ -60,7 +60,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         toLabel: "Aeroporto",
         to: booking.departure.toairport,
         date: booking.departure.pickupdate || booking.departure.departuredate || "",
-        dateTitle: booking.departure.pickupdate ? "Data e hora da recolha" : "Data e hora da partida",
+        dateTitle: "Data e hora da recolha",
       }
       : null;
 
