@@ -12,6 +12,7 @@ import { endOfWeek, format, startOfWeek } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { BookingCard } from "../BookingCard";
+import { pt } from "date-fns/locale/pt";
 
 export default function Dashboard() {
   const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
@@ -22,8 +23,8 @@ export default function Dashboard() {
   const initialStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const initialEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
 
-  const [dateFrom, setDateFrom] = useState(format(initialStart, "yyyy-MM-dd"));
-  const [dateTo, setDateTo] = useState(format(initialEnd, "yyyy-MM-dd"));
+  const [dateFrom, setDateFrom] = useState(format(initialStart, "yyyy-MM-dd", { locale: pt }  ));
+  const [dateTo, setDateTo] = useState(format(initialEnd, "yyyy-MM-dd", { locale: pt }));
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
 
