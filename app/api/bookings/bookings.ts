@@ -44,6 +44,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         }
 
         const data = JSON.parse(bodyText);
+        console.log("Retrieved data: ", data)
 
         const values = Object.values(data.bookings ?? {}).map((b: any) => ({
             bookingRef: b.ref,
