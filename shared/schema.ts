@@ -36,6 +36,20 @@ export const locationLogs = pgTable("location_logs", {
   sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow(),
 });
 
+export const contactTypes = pgTable("contact_types", {
+  id: serial("id").primaryKey(),
+  description: varchar("description", { length: 64 }).notNull().unique(),
+});
+
+export const drivers = pgTable("drivers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  mobilePhone: varchar("mobile_phone", { length: 32 }).notNull(),
+  preferredContactTypeId: serial("preferred_contact_type_id").notNull().references(() => contactTypes.id),
+  acceptedContactTypeId: serial("accepted_contact_type_id").notNull().references(() => contactTypes.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // === DATA SCHEMAS ===
 
 // List View Item
@@ -98,11 +112,22 @@ export type BookingsListResponse = z.infer<typeof bookingsListResponseSchema>;
 export type BookingDetailResponse = z.infer<typeof bookingDetailSchema>;
 export type BookingDetailWithStatusResponse = z.infer<typeof bookingDetailWithStatusSchema>;
 
-// Mock drivers list for assignment
-export const drivers = [
-  "Luis Pinto",
-  "Alvaro Pinto",
-];
+// Driver schemas
+export const driverSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  mobilePhone: z.string(),
+  preferredContactTypeId: z.number(),
+  acceptedContactTypeId: z.number(),
+});
+
+export const contactTypeSchema = z.object({
+  id: z.number(),
+  description: z.string(),
+});
+
+export type Driver = z.infer<typeof driverSchema>;
+export type ContactType = z.infer<typeof contactTypeSchema>;
 
 export const assignDriverSchema = z.object({
   driverName: z.string(),
