@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { drivers } from "@/shared/schema";
 import { format } from "date-fns";
+import { pt } from "date-fns/locale/pt";
 import {
   Calendar,
   Hotel,
@@ -59,7 +60,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         toLabel: "Aeroporto",
         to: booking.departure.toairport,
         date: booking.departure.pickupdate || booking.departure.departuredate || "",
-        dateTitle: booking.departure.pickupdate ? "Hora da recolha" : "Data de partida",
+        dateTitle: booking.departure.pickupdate ? "Data e hora da recolha" : "Data e hora da partida",
       }
       : null;
 
@@ -74,14 +75,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateOnly = new Date(itineraryDate.getFullYear(), itineraryDate.getMonth(), itineraryDate.getDate());
 
-    const timeStr = format(itineraryDate, "HH:mm");
+    const timeStr = format(itineraryDate, "HH:mm", { locale: pt });
 
     if (dateOnly.getTime() === today.getTime()) {
       return `Hoje ${timeStr}`;
     } else if (dateOnly.getTime() === tomorrow.getTime()) {
       return `Amanhã ${timeStr}`;
     } else {
-      return format(itineraryDate, "dd MMM yyyy HH:mm");
+      return format(itineraryDate, "dd MMM yyyy HH:mm", { locale: pt });
     }
   })();
 

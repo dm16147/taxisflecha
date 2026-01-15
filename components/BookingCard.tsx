@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { pt } from "date-fns/locale/pt";
 import { Clock, User, Hash } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -15,10 +16,29 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
   const isArrival = type === "arrivals";
   const rawDate = isArrival ? (booking.arrivaldate || booking.departuredate) : (booking.departuredate || booking.arrivaldate);
 
-  const parsedDate = rawDate ? new Date(rawDate) : null;
+  const parsedDate: Date | null = rawDate ? new Date(rawDate) : null;
   const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
-  const timeDisplay = isValidDate ? format(parsedDate as Date, "HH:mm") : "--:--";
-  const dateDisplay = isValidDate ? format(parsedDate as Date, "dd MMM yyyy") : "TBC";
+  let timeDisplay;
+  let dateDisplay;
+  if (isValidDate) {
+    timeDisplay = format(parsedDate!, "HH:mm", { locale: pt })
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+    if (dateOnly.getTime() === today.getTime()) {
+      dateDisplay = "Hoje";
+    } else if (dateOnly.getTime() === tomorrow.getTime()) {
+      dateDisplay = "Amanhã";
+    } else {
+      dateDisplay = format(parsedDate!, "dd MMM yyyy", { locale: pt });
+    }
+  } else {
+    timeDisplay = "--:--";
+    dateDisplay = "TBD";
+  }
+
   const tripLabel = isArrival ? "Chegada" : "Partida";
 
   const getStatusColor = (status: string) => {
@@ -71,10 +91,10 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
       </div>
 
       <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
-      <span className="text-xs text-zinc-500 font-mono">{dateDisplay}</span>
-         <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-            Ver detalhes →
-         </span>
+        <span className="text-xs text-zinc-500 font-mono">{dateDisplay}</span>
+        <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
+          Ver detalhes →
+        </span>
       </div>
     </motion.div>
   );
