@@ -49,7 +49,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       from: booking.arrival.fromairport,
       toLabel: "Entrega",
       to: booking.arrival.accommodationname,
-      date: booking.departure.pickupdate || booking.arrival.arrivaldate || "",
+      date: booking.arrival.pickupdate || booking.arrival.arrivaldate || "",
       dateTitle: "Data e hora da recolha",
     }
     : booking?.departure
