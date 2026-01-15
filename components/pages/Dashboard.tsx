@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { format, startOfWeek, endOfWeek, addWeeks } from "date-fns";
-import { Search, Calendar as CalendarIcon, Filter } from "lucide-react";
-import { Header } from "@/components/Header";
-import { BookingCard } from "@/components/BookingCard";
 import { BookingDetailDrawer } from "@/components/BookingDetailDrawer";
-import { useBookings } from "@/hooks/use-bookings";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Header } from "@/components/Header";
+import BookingList from "@/components/pages/BookingList";
+import DashboardControls from "@/components/pages/DashboardControls";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBookings } from "@/hooks/use-bookings";
 import type { BookingListItem, BookingType } from "@/shared/schema";
+import { endOfWeek, format, startOfWeek } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
+import { BookingCard } from "../BookingCard";
 
 export default function Dashboard() {
   const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
@@ -24,6 +24,8 @@ export default function Dashboard() {
 
   const [dateFrom, setDateFrom] = useState(format(initialStart, "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(format(initialEnd, "yyyy-MM-dd"));
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
 
   const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo);
 
@@ -49,67 +51,16 @@ export default function Dashboard() {
           </div>
 
           <div className="flex gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-              <Input
-                placeholder="Search ref or name..."
-                className="pl-9 w-full md:w-64 bg-zinc-900/50 border-zinc-800 focus:border-primary/50 focus:ring-primary/20"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="bg-zinc-900/50 border border-zinc-800 text-zinc-200 px-2 py-1 rounded-lg"
-              />
-              <span className="text-zinc-400">to</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="bg-zinc-900/50 border border-zinc-800 text-zinc-200 px-2 py-1 rounded-lg"
-              />
-
-              <Button
-                variant="outline"
-                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
-                onClick={() => {
-                  const start = startOfWeek(new Date(dateFrom), { weekStartsOn: 1 });
-                  const end = endOfWeek(new Date(dateFrom), { weekStartsOn: 1 });
-                  setDateFrom(format(start, "yyyy-MM-dd"));
-                  setDateTo(format(end, "yyyy-MM-dd"));
-                }}
-              >
-                This week
-              </Button>
-
-              <Button
-                variant="outline"
-                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
-                onClick={() => {
-                  const prevStart = startOfWeek(addWeeks(new Date(dateFrom), -1), { weekStartsOn: 1 });
-                  const prevEnd = endOfWeek(addWeeks(new Date(dateFrom), -1), { weekStartsOn: 1 });
-                  setDateFrom(format(prevStart, "yyyy-MM-dd"));
-                  setDateTo(format(prevEnd, "yyyy-MM-dd"));
-                }}
-              >
-                Prev week
-              </Button>
-
-              <Button
-                variant="outline"
-                className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
-                onClick={() => {
-                  const nextStart = startOfWeek(addWeeks(new Date(dateFrom), 1), { weekStartsOn: 1 });
-                  const nextEnd = endOfWeek(addWeeks(new Date(dateFrom), 1), { weekStartsOn: 1 });
-                  setDateFrom(format(nextStart, "yyyy-MM-dd"));
-                  setDateTo(format(nextEnd, "yyyy-MM-dd"));
-                }}
-              >
-                Next week
-              </Button>
-            </div>
+            <DashboardControls
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              setDateFrom={setDateFrom}
+              setDateTo={setDateTo}
+              dateFromOpen={dateFromOpen}
+              setDateFromOpen={setDateFromOpen}
+              dateToOpen={dateToOpen}
+              setDateToOpen={setDateToOpen}
+            />
           </div>
         </div>
 
@@ -154,17 +105,7 @@ export default function Dashboard() {
                 <p className="text-zinc-500">Não há reservas agendadas para este intervalo de datas.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {bookingList.map((booking, index) => (
-                  <BookingCard
-                    key={booking.ref}
-                    booking={booking}
-                    index={index}
-                    type={activeTab}
-                    onClick={() => handleBookingClick(booking.ref)}
-                  />
-                ))}
-              </div>
+              <BookingList bookingList={bookingList} type={activeTab} onBookingClick={handleBookingClick} />
             )}
           </TabsContent>
 
