@@ -38,7 +38,6 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         }
 
         const bodyText = await response.text();
-        console.log("Body ", bodyText)
         if (!bodyText) {
             console.error("No body:", response.statusText)
             return NextResponse.json({ bookings: {}, warnings: [] });
