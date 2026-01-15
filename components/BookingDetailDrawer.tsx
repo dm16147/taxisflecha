@@ -8,9 +8,9 @@ import {
   SheetContent
 } from "@/components/ui/sheet";
 import { useAssignDriver, useBookingDetail, useForceLocation, useSendLocation } from "@/hooks/use-bookings";
+import { useDrivers } from "@/hooks/use-drivers";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { drivers } from "@/shared/schema";
 import { format } from "date-fns";
 import {
   Calendar,
@@ -31,6 +31,7 @@ interface BookingDetailDrawerProps {
 
 export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetailDrawerProps) {
   const { data, isLoading } = useBookingDetail(refId);
+  const { data: driversData, isLoading: isLoadingDrivers } = useDrivers();
   const assignDriver = useAssignDriver();
   const forceLocation = useForceLocation();
   const sendLocation = useSendLocation();
@@ -291,11 +292,21 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                           <SelectValue placeholder="Escolha um motorista..." />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-800">
-                          {drivers.map(driver => (
-                            <SelectItem key={driver} value={driver} className="focus:bg-zinc-800 focus:text-primary">
-                              {driver}
+                          {isLoadingDrivers ? (
+                            <SelectItem value="loading" disabled className="text-zinc-500">
+                              A carregar motoristas...
                             </SelectItem>
-                          ))}
+                          ) : driversData && driversData.length > 0 ? (
+                            driversData.map(driver => (
+                              <SelectItem key={driver.id} value={driver.name} className="focus:bg-zinc-800 focus:text-primary">
+                                {driver.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled className="text-zinc-500">
+                              Sem motoristas disponíveis
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <div className="flex items-center gap-2">
