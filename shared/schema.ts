@@ -50,7 +50,7 @@ export const drivers = pgTable("drivers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const hotels = pgTable("hotels", {
+export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   latitude: doublePrecision("latitude").notNull(),
@@ -142,8 +142,8 @@ export const assignDriverSchema = z.object({
   driverName: z.string(),
 });
 
-// Hotel schemas
-export const hotelSchema = z.object({
+// Location schemas
+export const locationSchema = z.object({
   id: z.number(),
   name: z.string(),
   latitude: z.number(),
@@ -152,15 +152,15 @@ export const hotelSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
-export const insertHotelSchema = z.object({
+export const InsertLocationSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   latitude: z.number({ required_error: "Latitude é obrigatória" }),
   longitude: z.number({ required_error: "Longitude é obrigatória" }),
 });
 
-export const updateHotelSchema = insertHotelSchema.partial();
+export const updateLocationSchema = InsertLocationSchema.partial();
 
-export type Hotel = z.infer<typeof hotelSchema>;
-export type InsertHotel = z.infer<typeof insertHotelSchema>;
-export type UpdateHotel = z.infer<typeof updateHotelSchema>;
+export type Location = z.infer<typeof locationSchema>;
+export type InsertLocation = z.infer<typeof InsertLocationSchema>;
+export type UpdateLocation = z.infer<typeof updateLocationSchema>;
 
