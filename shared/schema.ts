@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, serial, varchar, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
 
 
 // Simple assignment schema for in-memory use
@@ -48,6 +48,15 @@ export const drivers = pgTable("drivers", {
   preferredContactTypeId: serial("preferred_contact_type_id").notNull().references(() => contactTypes.id),
   acceptedContactTypeId: serial("accepted_contact_type_id").notNull().references(() => contactTypes.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const hotels = pgTable("hotels", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  latitude: doublePrecision("latitude").notNull(),
+  longitude: doublePrecision("longitude").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // === DATA SCHEMAS ===
@@ -132,4 +141,26 @@ export type ContactType = z.infer<typeof contactTypeSchema>;
 export const assignDriverSchema = z.object({
   driverName: z.string(),
 });
+
+// Hotel schemas
+export const hotelSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertHotelSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  latitude: z.number({ required_error: "Latitude é obrigatória" }),
+  longitude: z.number({ required_error: "Longitude é obrigatória" }),
+});
+
+export const updateHotelSchema = insertHotelSchema.partial();
+
+export type Hotel = z.infer<typeof hotelSchema>;
+export type InsertHotel = z.infer<typeof insertHotelSchema>;
+export type UpdateHotel = z.infer<typeof updateHotelSchema>;
 
