@@ -161,14 +161,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     sendLocation.mutate({ bookingRef: refId }, {
       onSuccess: (data) => {
         toast({
-          title: "Localização enviada",
-          description: `Localização ${data.location} enviada com sucesso`,
+          title: "Local enviada",
+          description: `Local ${data.location} enviada com sucesso`,
         });
       },
       onError: (err) => {
         toast({
           variant: "destructive",
-          title: "Falha ao enviar localização",
+          title: "Falha ao enviar local",
           description: err.message
         });
       }
@@ -357,7 +357,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Estado da localização</span>
+                      <span className="text-xs text-zinc-500">Estado da local</span>
                       <span className={cn("text-sm font-bold flex items-center gap-2",
                         locationAlreadySent ? "text-emerald-500" : "text-zinc-400"
                       )}>
@@ -396,10 +396,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <MapPin className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold text-white">Pronto para enviar localização</h4>
+                          <h4 className="text-sm font-semibold text-white">Pronto para enviar local</h4>
                         </div>
                         <p className="text-xs text-zinc-400">
-                          O tempo de transferência é de 30 minutos. Envie a localização para notificar o passageiro.
+                          O tempo de transferência é de 30 minutos. Envie a local para notificar o passageiro.
                         </p>
                       </div>
                       <Button
@@ -416,7 +416,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         ) : (
                           <>
                             <Send className="h-3 w-3 mr-1.5" />
-                            Enviar localização
+                            Enviar local
                           </>
                         )}
                       </Button>

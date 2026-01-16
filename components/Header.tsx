@@ -50,11 +50,11 @@ export function Header() {
           {open && (
             <div className="absolute right-0 mt-2 w-44 bg-background border border-white/10 rounded-md shadow-lg z-50">
               <Link
-                href="/config/hoteis"
+                href="/config/locations"
                 className="block px-4 py-2 text-sm text-white hover:bg-primary/20 rounded-t-md"
                 onClick={() => setOpen(false)}
               >
-                Hotéis
+                Locais
               </Link>
               {/* Futuras opções aqui */}
             </div>

@@ -1,34 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Hotel, InsertHotel } from "@/shared/schema";
+import { Location, InsertLocation } from "@/shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface HotelFormProps {
-  hotel?: Hotel | null;
-  onSave: (data: InsertHotel) => void;
+interface LocationFormProps {
+  location?: Location | null;
+  onSave: (data: InsertLocation) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function HotelForm({ hotel, onSave, onCancel, isLoading }: HotelFormProps) {
-  const [formData, setFormData] = useState<InsertHotel>({
+export function LocationForm({ location, onSave, onCancel, isLoading }: LocationFormProps) {
+  const [formData, setFormData] = useState<InsertLocation>({
     name: "",
     latitude: 0,
     longitude: 0,
   });
 
   useEffect(() => {
-    if (hotel) {
+    if (location) {
       setFormData({
-        name: hotel.name,
-        latitude: hotel.latitude,
-        longitude: hotel.longitude,
+        name: location.name,
+        latitude: location.latitude,
+        longitude: location.longitude,
       });
     }
-  }, [hotel]);
+  }, [location]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +60,8 @@ export function HotelForm({ hotel, onSave, onCancel, isLoading }: HotelFormProps
             onChange={(e) =>
               setFormData({ ...formData, latitude: parseFloat(e.target.value) })
             }
+            min={-90}
+            max={90}
             required
             className="mt-1"
           />
@@ -75,6 +77,8 @@ export function HotelForm({ hotel, onSave, onCancel, isLoading }: HotelFormProps
             onChange={(e) =>
               setFormData({ ...formData, longitude: parseFloat(e.target.value) })
             }
+            min={-180}
+            max={180}
             required
             className="mt-1"
           />

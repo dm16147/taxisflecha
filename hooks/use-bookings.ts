@@ -76,7 +76,7 @@ export function useSendLocation() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao enviar localização');
+        throw new Error(errorData.message || 'Falha ao enviar local');
       }
 
       return response.json();
@@ -98,7 +98,7 @@ export function useForceLocation() {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao alternar o envio automático da localização');
+        throw new Error('Falha ao alternar o envio automático da local');
       }
 
       return response.json();
