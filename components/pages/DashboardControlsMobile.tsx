@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { addWeeks, endOfWeek, format, startOfWeek } from "date-fns";
-import { Calendar as CalendarIcon, Search } from "lucide-react";
-import { useState } from "react";
+import { addWeeks, endOfWeek, format, isThisWeek, startOfWeek } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { pt } from "date-fns/locale/pt";
 
 type Props = {
@@ -20,7 +19,7 @@ type Props = {
     setDateToOpen: (b: boolean) => void;
 };
 
-export default function DashboardControls({
+export default function DashboardControlsMobile({
     dateFrom,
     dateTo,
     setDateFrom,
@@ -30,16 +29,17 @@ export default function DashboardControls({
     dateToOpen,
     setDateToOpen,
 }: Props) {
-    const [search, setSearch] = useState("");
+    const isCurrentWeek = dateFrom ? isThisWeek(new Date(dateFrom), { weekStartsOn: 1 }) : false;
 
     return (
-        <div className="flex gap-2">
-            <div className="flex items-center gap-2">
-                <div className="relative flex gap-2">
+        <div className="flex flex-col gap-2 w-full">
+            {/* Linha das datas */}
+            <div className="flex flex-row items-center gap-2 w-full">
+                <div className="relative flex gap-2 flex-1">
                     <Input
                         value={dateFrom ? format(new Date(dateFrom), "dd MMM yyyy", { locale: pt }) : ""}
-                        placeholder="Selecione data de início"
-                        className="bg-zinc-900/50 border-zinc-800 text-zinc-200 pr-10 w-[180px]"
+                        placeholder="Início"
+                        className="bg-zinc-900/50 border-zinc-800 text-zinc-200 pr-10 w-full text-xs"
                         readOnly
                         onKeyDown={(e) => {
                             if (e.key === "ArrowDown") {
@@ -75,13 +75,13 @@ export default function DashboardControls({
                     </Popover>
                 </div>
 
-                <span className="text-zinc-400">até</span>
+                <span className="text-zinc-400 text-xs">a</span>
 
-                <div className="relative flex gap-2">
+                <div className="relative flex gap-2 flex-1">
                     <Input
                         value={dateTo ? format(new Date(dateTo), "dd MMM yyyy", { locale: pt }) : ""}
-                        placeholder="Selecione date de fim"
-                        className="bg-zinc-900/50 border-zinc-800 text-zinc-200 pr-10 w-[180px]"
+                        placeholder="Fim"
+                        className="bg-zinc-900/50 border-zinc-800 text-zinc-200 pr-10 w-full text-xs"
                         readOnly
                         onKeyDown={(e) => {
                             if (e.key === "ArrowDown") {
@@ -116,24 +116,29 @@ export default function DashboardControls({
                         </PopoverContent>
                     </Popover>
                 </div>
+            </div>
 
-
+            {/* Linha dos botões */}
+            <div className="flex flex-row gap-2 w-full">
+                {
+                    <Button
+                        disabled={isCurrentWeek}
+                        variant="outline"
+                        className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800 px-2 py-1.5 text-xs flex-1"
+                        onClick={() => {
+                            const currentDate = dateFrom ? new Date(dateFrom) : new Date();
+                            const prevStart = startOfWeek(addWeeks(currentDate, -1), { weekStartsOn: 1 });
+                            const prevEnd = endOfWeek(addWeeks(currentDate, -1), { weekStartsOn: 1 });
+                            setDateFrom(format(prevStart, "yyyy-MM-dd", { locale: pt }));
+                            setDateTo(format(prevEnd, "yyyy-MM-dd", { locale: pt }));
+                        }}
+                    >
+                        Anterior
+                    </Button>
+                }
                 <Button
                     variant="outline"
-                    className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
-                    onClick={() => {
-                        const currentDate = dateFrom ? new Date(dateFrom) : new Date();
-                        const prevStart = startOfWeek(addWeeks(currentDate, -1), { weekStartsOn: 1 });
-                        const prevEnd = endOfWeek(addWeeks(currentDate, -1), { weekStartsOn: 1 });
-                        setDateFrom(format(prevStart, "yyyy-MM-dd", { locale: pt }));
-                        setDateTo(format(prevEnd, "yyyy-MM-dd", { locale: pt }));
-                    }}
-                >
-                    Semana anterior
-                </Button>
-                <Button
-                    variant="outline"
-                    className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                    className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800 px-2 py-1.5 text-xs flex-1"
                     onClick={() => {
                         const start = startOfWeek(new Date(), { weekStartsOn: 1 });
                         const end = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -141,11 +146,11 @@ export default function DashboardControls({
                         setDateTo(format(end, "yyyy-MM-dd", { locale: pt }));
                     }}
                 >
-                    Semana atual
+                    Atual
                 </Button>
                 <Button
                     variant="outline"
-                    className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                    className="border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800 px-2 py-1.5 text-xs flex-1"
                     onClick={() => {
                         const currentDate = dateFrom ? new Date(dateFrom) : new Date();
                         const nextStart = startOfWeek(addWeeks(currentDate, 1), { weekStartsOn: 1 });
@@ -154,7 +159,7 @@ export default function DashboardControls({
                         setDateTo(format(nextEnd, "yyyy-MM-dd", { locale: pt }));
                     }}
                 >
-                    Próxima semana
+                    Próxima
                 </Button>
             </div>
         </div>
