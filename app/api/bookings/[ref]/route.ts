@@ -28,8 +28,6 @@ export async function GET(
 
         const data = await response.json();
 
-        console.log("Retrieved data: ", data)
-
         // Fetch booking status from database
         const bookingStatusRecord = await db.query.bookingsStatus.findFirst({
             where: eq(bookingsStatus.bookingRef, ref),

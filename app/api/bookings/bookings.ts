@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { BookingType, bookingsStatus } from "@/shared/schema";
 import { NextResponse } from "next/server";
+import { inArray } from "drizzle-orm";
 
 function formatDateForApi(date: string): string {
     if (date.includes('T')) {
@@ -44,7 +45,6 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         }
 
         const data = JSON.parse(bodyText);
-        console.log("Retrieved data: ", data)
 
         const values = Object.values(data.bookings ?? {}).map((b: any) => ({
             bookingRef: b.ref,
@@ -64,7 +64,39 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
                 });
         }
 
-        return NextResponse.json(data);
+
+        // Batch fetch driver assignments for all booking refs
+        const bookingRefs = values.map((v) => v.bookingRef);
+        let driverAssignments: Record<string, string> = {};
+
+        if (bookingRefs.length > 0) {
+            const assignments = await db
+                .select({
+                    bookingRef: bookingsStatus.bookingRef,
+                    driver: bookingsStatus.driver,
+                })
+                .from(bookingsStatus)
+                .where(inArray(bookingsStatus.bookingRef, bookingRefs));
+
+            // Create a lookup map for quick access
+            driverAssignments = assignments.reduce((acc, item) => {
+                if (item.driver && item.driver.trim() !== "") {
+                    acc[item.bookingRef] = item.driver;
+                }
+                return acc;
+            }, {} as Record<string, string>);
+        }
+
+        // Merge driver info into booking data
+        const enrichedBookings = Object.entries(data.bookings ?? {}).reduce((acc, [key, booking]: [string, any]) => {
+            acc[key] = {
+                ...booking,
+                driver: driverAssignments[booking.ref] || undefined,
+            };
+            return acc;
+        }, {} as Record<string, any>);
+
+        return NextResponse.json({ ...data, bookings: enrichedBookings });
     } catch (error) {
         console.error(`Error fetching ${type} bookings: ${error}`);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

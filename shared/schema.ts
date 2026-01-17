@@ -60,6 +60,7 @@ export const bookingListItemSchema = z.object({
   departuredate: z.string(),
   passengername: z.string(),
   vehicle: z.string(),
+  driver: z.string().optional(), // Driver assignment from our database
 });
 
 // The API returns an object of objects for the list
