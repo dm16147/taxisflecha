@@ -38,7 +38,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
   const sendLocation = useSendLocation();
   const { toast } = useToast();
 
-  const [selectedDriver, setSelectedDriver] = useState<string>("");
+  const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [isReassigning, setIsReassigning] = useState<boolean>(false);
 
   const booking = data?.booking;
@@ -96,10 +96,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
   // Update selected driver when data loads if already assigned
   useEffect(() => {
-    if (open && bookingStatus?.driver) {
-      setSelectedDriver(bookingStatus.driver);
+    if (open && bookingStatus?.driver?.id) {
+      setSelectedDriver(bookingStatus.driver.id);
     } else if (open) {
-      setSelectedDriver("");
+      setSelectedDriver(null);
     }
     if (open) setIsReassigning(false);
   }, [open, bookingStatus?.driver]);
@@ -107,11 +107,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
   const handleAssignDriver = () => {
     if (!refId || !selectedDriver) return;
 
-    assignDriver.mutate({ bookingRef: refId, driverName: selectedDriver }, {
+    const driverName = driversData?.find(d => d.id === selectedDriver)?.name || "motorista";
+
+    assignDriver.mutate({ bookingRef: refId, driverId: selectedDriver }, {
       onSuccess: () => {
         toast({
           title: "Motorista atribuído",
-          description: `${selectedDriver} foi atribuído à reserva ${refId}`,
+          description: `${driverName} foi atribuído à reserva ${refId}`,
         });
         setIsReassigning(false);
       },
@@ -146,13 +148,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
   const handleReassignDrive = () => {
     // Enter reassign mode and clear the local selection only; do NOT mutate cached bookingStatus
-    setSelectedDriver("");
+    setSelectedDriver(null);
     setIsReassigning(true);
   }
 
   const handleCancelReassign = () => {
     // restore the selectedDriver from the cached bookingStatus (if any) and exit reassign mode
-    setSelectedDriver(bookingStatus?.driver ?? "");
+    setSelectedDriver(bookingStatus?.driver?.id ?? null);
     setIsReassigning(false);
   }
 
@@ -288,7 +290,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   <div className="bg-card rounded-xl p-5 border border-white/5 shadow-inner">
                     <label className="text-sm text-zinc-400 mb-2 block">Selecionar motorista</label>
                     <div className="flex gap-2">
-                      <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                      <Select value={selectedDriver?.toString() || ""} onValueChange={(value) => setSelectedDriver(Number(value))}>
                         <SelectTrigger className="w-full bg-zinc-900 border-zinc-700">
                           <SelectValue placeholder="Escolha um motorista..." />
                         </SelectTrigger>
@@ -299,7 +301,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                             </SelectItem>
                           ) : driversData && driversData.length > 0 ? (
                             driversData.map(driver => (
-                              <SelectItem key={driver.id} value={driver.name} className="focus:bg-zinc-800 focus:text-primary">
+                              <SelectItem key={driver.id} value={driver.id.toString()} className="focus:bg-zinc-800 focus:text-primary">
                                 {driver.name}
                               </SelectItem>
                             ))
@@ -335,7 +337,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                     <div className="flex items-center justify-between">
                       <div>
                         <label className="text-xs text-emerald-500/70 mb-1 block">Motorista atribuído</label>
-                        <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver}</p>
+                        <p className="text-lg font-semibold text-emerald-500">{bookingStatus.driver?.name}</p>
                       </div>
                       <Button
                         variant="outline"

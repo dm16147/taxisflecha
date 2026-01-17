@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { BookingType, bookingsStatus } from "@/shared/schema";
+import { BookingType, bookingsStatus, drivers } from "@/shared/schema";
 import { NextResponse } from "next/server";
-import { inArray } from "drizzle-orm";
+import { inArray, eq } from "drizzle-orm";
 
 function formatDateForApi(date: string): string {
     if (date.includes('T')) {
@@ -51,6 +51,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
             type,
             status: b.status,
             autoSendLocation: false,
+            driverId: null,
             locationSent: false,
             updatedAt: new Date(),
         }));
@@ -67,24 +68,29 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
 
         // Batch fetch driver assignments for all booking refs
         const bookingRefs = values.map((v) => v.bookingRef);
-        let driverAssignments: Record<string, string> = {};
+        let driverAssignments: Record<string, { id: number; name: string }> = {};
 
         if (bookingRefs.length > 0) {
             const assignments = await db
                 .select({
                     bookingRef: bookingsStatus.bookingRef,
-                    driver: bookingsStatus.driver,
+                    driverId: bookingsStatus.driverId,
+                    driverName: drivers.name,
                 })
                 .from(bookingsStatus)
+                .leftJoin(drivers, eq(bookingsStatus.driverId, drivers.id))
                 .where(inArray(bookingsStatus.bookingRef, bookingRefs));
 
             // Create a lookup map for quick access
             driverAssignments = assignments.reduce((acc, item) => {
-                if (item.driver && item.driver.trim() !== "") {
-                    acc[item.bookingRef] = item.driver;
+                if (item.driverId && item.driverName) {
+                    acc[item.bookingRef] = {
+                        id: item.driverId,
+                        name: item.driverName,
+                    };
                 }
                 return acc;
-            }, {} as Record<string, string>);
+            }, {} as Record<string, { id: number; name: string }>);
         }
 
         // Merge driver info into booking data
