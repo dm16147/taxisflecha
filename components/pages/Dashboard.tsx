@@ -3,7 +3,8 @@
 import { BookingDetailDrawer } from "@/components/BookingDetailDrawer";
 import { Header } from "@/components/Header";
 import BookingList from "@/components/pages/BookingList";
-import DashboardControls from "@/components/pages/DashboardControls";
+import DashboardControlsMobile from "@/components/pages/DashboardControlsMobile";
+import DashboardControlsDesktop from "@/components/pages/DashboardControlsDesktop";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBookings } from "@/hooks/use-bookings";
@@ -45,14 +46,29 @@ export default function Dashboard() {
       <Header />
 
       <main className="container px-4 sm:px-6 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-display font-bold text-white mb-2">Reservas</h1>
-            <p className="text-zinc-400">Gerir transfers diários.</p>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">Reservas</h1>
+            <p className="text-sm md:text-base text-zinc-400">Gerir transfers diários.</p>
           </div>
 
-          <div className="flex gap-2">
-            <DashboardControls
+          {/* Mobile Controls */}
+          <div className="md:hidden w-full">
+            <DashboardControlsMobile
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              setDateFrom={setDateFrom}
+              setDateTo={setDateTo}
+              dateFromOpen={dateFromOpen}
+              setDateFromOpen={setDateFromOpen}
+              dateToOpen={dateToOpen}
+              setDateToOpen={setDateToOpen}
+            />
+          </div>
+
+          {/* Desktop Controls */}
+          <div className="hidden md:block">
+            <DashboardControlsDesktop
               dateFrom={dateFrom}
               dateTo={dateTo}
               setDateFrom={setDateFrom}
