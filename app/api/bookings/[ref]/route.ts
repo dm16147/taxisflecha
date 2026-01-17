@@ -2,7 +2,7 @@
 import { headers } from "@/lib/utils";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingsStatus } from "@/shared/schema";
+import { bookingsStatus, drivers } from "@/shared/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -28,20 +28,29 @@ export async function GET(
 
         const data = await response.json();
 
-        console.log("Retrieved data: ", data)
-
-        // Fetch booking status from database
-        const bookingStatusRecord = await db.query.bookingsStatus.findFirst({
-            where: eq(bookingsStatus.bookingRef, ref),
-        });
+        // Fetch booking status from database with driver information
+        const bookingStatusRecord = await db
+            .select({
+                driverId: bookingsStatus.driverId,
+                driverName: drivers.name,
+                autoSendLocation: bookingsStatus.autoSendLocation,
+                locationSent: bookingsStatus.locationSent,
+            })
+            .from(bookingsStatus)
+            .leftJoin(drivers, eq(bookingsStatus.driverId, drivers.id))
+            .where(eq(bookingsStatus.bookingRef, ref))
+            .limit(1);
 
         // Add booking status to response
         const responseWithStatus = {
             ...data,
-            bookingStatus: bookingStatusRecord ? {
-                driver: bookingStatusRecord.driver,
-                autoSendLocation: bookingStatusRecord.autoSendLocation,
-                locationSent: bookingStatusRecord.locationSent,
+            bookingStatus: bookingStatusRecord.length > 0 ? {
+                driver: bookingStatusRecord[0].driverId ? {
+                    id: bookingStatusRecord[0].driverId,
+                    name: bookingStatusRecord[0].driverName,
+                } : undefined,
+                autoSendLocation: bookingStatusRecord[0].autoSendLocation,
+                locationSent: bookingStatusRecord[0].locationSent,
             } : null,
         };
 

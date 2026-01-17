@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { pt } from "date-fns/locale/pt";
-import { Clock, User, Hash } from "lucide-react";
+import { Clock, User, Hash, UserCheck, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { BookingListItem, BookingType } from "@/shared/schema";
@@ -84,6 +84,20 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium text-zinc-200 line-clamp-1">{booking.passengername}</span>
         </div>
+        
+        {/* Driver Assignment Status */}
+        {booking.driver ? (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="text-xs font-medium text-emerald-500 line-clamp-1">{booking.driver.name}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+            <span className="text-xs font-medium text-amber-500">Sem motorista</span>
+          </div>
+        )}
+        
         <div className="flex items-center gap-3">
           <Hash className="h-4 w-4 text-muted-foreground" />
           <span className="font-mono text-sm text-zinc-400">{booking.ref}</span>

@@ -45,11 +45,11 @@ export function useAssignDriver() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ bookingRef, driverName }: { bookingRef: string; driverName: string }) => {
+    mutationFn: async ({ bookingRef, driverId }: { bookingRef: string; driverId: number }) => {
       const response = await fetch(`/api/bookings/${bookingRef}/assign-driver`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ driverName }),
+        body: JSON.stringify({ driverId }),
       });
 
       if (!response.ok) {

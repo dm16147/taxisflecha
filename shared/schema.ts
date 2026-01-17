@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { pgTable, serial, varchar, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, boolean, timestamp, doublePrecision, integer } from "drizzle-orm/pg-core";
 
 
 // Simple assignment schema for in-memory use
 export const insertAssignmentSchema = z.object({
   bookingRef: z.string(),
-  driverName: z.string(),
+  driverId: z.number(),
 });
 
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
@@ -19,7 +19,7 @@ export const bookingsStatus = pgTable("bookings_status", {
   bookingRef: varchar("booking_ref", { length: 64 }).notNull().unique(),
   type: varchar("type", { length: 32 }).notNull(),
   status: varchar("status", { length: 32 }).notNull(),
-  driver: varchar("driver", { length: 255 }).notNull().default(""),
+  driverId: integer("driver_id").references(() => drivers.id),
   autoSendLocation: boolean("auto_send_location").notNull().default(false),
   locationSent: boolean("location_sent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -69,6 +69,10 @@ export const bookingListItemSchema = z.object({
   departuredate: z.string(),
   passengername: z.string(),
   vehicle: z.string(),
+  driver: z.object({
+    id: z.number(),
+    name: z.string(),
+  }).optional(), // Driver assignment from our database
 });
 
 // The API returns an object of objects for the list
@@ -110,7 +114,10 @@ export const bookingDetailSchema = z.object({
 
 export const bookingDetailWithStatusSchema = bookingDetailSchema.extend({
   bookingStatus: z.object({
-    driver: z.string(),
+    driver: z.object({
+      id: z.number(),
+      name: z.string(),
+    }).optional(),
     autoSendLocation: z.boolean(),
     locationSent: z.boolean(),
   }).optional(),
@@ -139,7 +146,7 @@ export type Driver = z.infer<typeof driverSchema>;
 export type ContactType = z.infer<typeof contactTypeSchema>;
 
 export const assignDriverSchema = z.object({
-  driverName: z.string(),
+  driverId: z.number(),
 });
 
 // Location schemas
@@ -163,4 +170,3 @@ export const updateLocationSchema = InsertLocationSchema.partial();
 export type Location = z.infer<typeof locationSchema>;
 export type InsertLocation = z.infer<typeof InsertLocationSchema>;
 export type UpdateLocation = z.infer<typeof updateLocationSchema>;
-

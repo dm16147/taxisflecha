@@ -10,16 +10,14 @@ export async function POST(
 ) {
     try {
         const { ref } = await params;
-        const { driverName } = await request.json();
+        const { driverId } = await request.json();
 
-        if (!driverName) {
+        if (!driverId) {
             return NextResponse.json(
-                { message: "Driver name is required" },
+                { message: "Driver ID is required" },
                 { status: 400 }
             );
         }
-
-        await storage.assignDriver({ bookingRef: ref, driverName });
 
         // Update the database with the driver assignment
         const existingStatus = await db.query.bookingsStatus.findFirst({
@@ -30,7 +28,7 @@ export async function POST(
             // Update existing record
             await db.update(bookingsStatus)
                 .set({ 
-                    driver: driverName,
+                    driverId: driverId,
                     updatedAt: new Date(),
                 })
                 .where(eq(bookingsStatus.bookingRef, ref));
@@ -40,7 +38,7 @@ export async function POST(
                 bookingRef: ref,
                 type: "unknown",
                 status: "pending",
-                driver: driverName,
+                driverId: driverId,
                 autoSendLocation: false,
                 locationSent: false,
             });
@@ -49,7 +47,7 @@ export async function POST(
         return NextResponse.json({
             success: true,
             message: "Driver assigned successfully",
-            driver: driverName,
+            driverId: driverId,
         });
     } catch (error) {
         console.error("Error assigning driver:", error);
