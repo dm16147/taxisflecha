@@ -34,16 +34,6 @@ export default function DashboardControls({
 
     return (
         <div className="flex gap-2">
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                <Input
-                    placeholder="Pesquise por nome ou referência..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 w-full md:w-64 bg-zinc-900/50 border-zinc-800 focus:border-primary/50 focus:ring-primary/20"
-                />
-            </div>
-
             <div className="flex items-center gap-2">
                 <div className="relative flex gap-2">
                     <Input
