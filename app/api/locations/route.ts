@@ -3,10 +3,14 @@ import { db } from "@/lib/db";
 import { locations } from "@/shared/schema";
 import { InsertLocationSchema } from "@/shared/schema";
 import { count, desc } from "drizzle-orm";
+import { requireRole } from "@/lib/auth-helpers";
 
-// GET - Listar locais com paginação
+// GET - List locations with pagination (MANAGER only)
 export async function GET(request: NextRequest) {
   try {
+    // Require MANAGER role
+    await requireRole("MANAGER");
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -35,6 +39,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    // If error is a NextResponse (from requireRole), return it
+    if (error instanceof NextResponse) {
+      return error;
+    }
+
     console.error("Erro ao buscar locais:", error);
     return NextResponse.json(
       { error: "Erro ao buscar locais" },
@@ -43,9 +52,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Criar novo local
+// POST - Create new location (MANAGER only)
 export async function POST(request: NextRequest) {
   try {
+    // Require MANAGER role
+    await requireRole("MANAGER");
+
     const body = await request.json();
     const validatedData = InsertLocationSchema.parse(body);
 
