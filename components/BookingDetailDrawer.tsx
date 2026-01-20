@@ -79,11 +79,11 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     const timeStr = format(itineraryDate, "HH:mm", { locale: pt });
 
     if (dateOnly.getTime() === today.getTime()) {
-      return `Hoje ${timeStr}`;
+      return `Hoje às ${timeStr}h`;
     } else if (dateOnly.getTime() === tomorrow.getTime()) {
-      return `Amanhã ${timeStr}`;
+      return `Amanhã às ${timeStr}h`;
     } else {
-      return format(itineraryDate, "dd MMM yyyy HH:mm", { locale: pt });
+      return format(itineraryDate, "dd MMM yyyy 'às' HH:mm'h'", { locale: pt });
     }
   })();
 
