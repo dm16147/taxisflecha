@@ -8,7 +8,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Allow auth routes and login page
-  if (pathname.startsWith("/api/auth") || pathname === "/login") {
+  if (pathname.startsWith("/api/auth") || pathname === "/login" || pathname === "/register") {
     return;
   }
 
