@@ -4,6 +4,7 @@ import { users, type UserRole } from "@/shared/schema";
 import { eq } from "drizzle-orm";
 import { authConfig } from "./auth.config";
 import { env } from "@/lib/env";
+import bcrypt from "bcryptjs";
 
 // Extend the built-in session type
 declare module "next-auth" {
@@ -17,6 +18,7 @@ declare module "next-auth" {
     interface User {
         id: string | number;
         roles?: UserRole[];
+        password?: string;
     }
 
     interface JWT {
@@ -31,6 +33,49 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async signIn({ user, account, profile }) {
             if (!user.email) return false;
 
+            // Handle Credentials provider (email/password login)
+            if (account?.provider === "credentials") {
+                try {
+                    // Find user in database
+                    const dbUser = await db.query.users.findFirst({
+                        where: eq(users.email, user.email.toLowerCase()),
+                    });
+
+                    if (!dbUser || !dbUser.password) {
+                        console.log(`Login failed: User not found or no password set for ${user.email}`);
+                        return false;
+                    }
+
+                    // Verify password
+                    const isValidPassword = await bcrypt.compare(
+                        (user as any).password,
+                        dbUser.password
+                    );
+
+                    if (!isValidPassword) {
+                        console.log(`Login failed: Invalid password for ${user.email}`);
+                        return false;
+                    }
+
+                    // Update user object with database data
+                    user.id = dbUser.id;
+                    user.name = dbUser.name;
+                    user.roles = dbUser.roles.split(",") as UserRole[];
+
+                    // Update last login time
+                    await db
+                        .update(users)
+                        .set({ lastLoginAt: new Date() })
+                        .where(eq(users.id, dbUser.id));
+
+                    return true;
+                } catch (error) {
+                    console.error("Error during credentials sign in:", error);
+                    return false;
+                }
+            }
+
+            // Handle OAuth providers (Google, etc.)
             // Check if email is in the allowed list (if ALLOWED_EMAILS is configured)
             if (env.ALLOWED_EMAILS) {
                 const allowedEmails = env.ALLOWED_EMAILS.split(",").map(e => e.trim().toLowerCase());
