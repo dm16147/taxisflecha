@@ -55,6 +55,28 @@ function LoginContent() {
 
     const handleCredentialsLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validate email format
+        const emailRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+        if (!formData.email || !emailRegex.test(formData.email)) {
+            toast({
+                variant: "destructive",
+                title: "Erro de Validação",
+                description: "Por favor, insira um email válido",
+            });
+            return;
+        }
+
+        // Validate password is not empty
+        if (!formData.password) {
+            toast({
+                variant: "destructive",
+                title: "Erro de Validação",
+                description: "Por favor, insira a sua senha",
+            });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -115,11 +137,10 @@ function LoginContent() {
                                         <Label htmlFor="email" className="text-gray-200">Email</Label>
                                         <Input
                                             id="email"
-                                            type="email"
+                                            type="text"
                                             placeholder="seu@email.com"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            required
                                             disabled={loading}
                                             className="bg-zinc-800 border-zinc-700 text-white"
                                         />
@@ -133,7 +154,6 @@ function LoginContent() {
                                             placeholder="Sua senha"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            required
                                             disabled={loading}
                                             className="bg-zinc-800 border-zinc-700 text-white"
                                         />
