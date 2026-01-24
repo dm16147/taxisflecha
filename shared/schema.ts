@@ -64,6 +64,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }), // NULL for OAuth users, hashed for credentials users
   roles: text("roles").notNull().default("USER"), // Comma-separated roles: USER, MANAGER
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
