@@ -62,6 +62,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     user.name = dbUser.name;
                     user.roles = dbUser.roles.split(",") as UserRole[];
 
+                    console.log(user.roles)
+
                     // Update last login time
                     await db
                         .update(users)
@@ -141,13 +143,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         async jwt({ token, user, trigger }) {
             if (user) {
-                token.roles = user.roles;
                 // Fetch the numeric ID from database
                 const dbUser = await db.query.users.findFirst({
                     where: eq(users.email, user.email!),
                 });
                 if (dbUser) {
                     token.id = dbUser.id;
+                    token.roles = dbUser.roles.split(",") as UserRole[];
                 }
             }
             return token;

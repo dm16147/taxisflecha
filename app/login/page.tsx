@@ -227,7 +227,7 @@ export default function LoginPage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-black">
-                <div className="text-white">Carregando...</div>
+                <div className="text-white">A carregar...</div>
             </div>
         }>
             <LoginContent />
