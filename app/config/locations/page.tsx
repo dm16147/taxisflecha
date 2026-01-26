@@ -128,7 +128,7 @@ export default function LocationsPage() {
 
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
-            Carregando...
+            A carregar...
           </div>
         ) : (
           <>

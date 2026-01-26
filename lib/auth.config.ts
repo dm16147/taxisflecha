@@ -34,6 +34,16 @@ export const authConfig = {
             },
         }),
     ],
+    callbacks: {
+        async session({ session, token }) {
+            // Populate session from JWT token (available in middleware)
+            if (token.id && token.roles) {
+                (session.user as any).id = token.id;
+                (session.user as any).roles = token.roles;
+            }
+            return session;
+        },
+    },
     pages: {
         signIn: "/login",
         error: "/login",
