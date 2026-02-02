@@ -1,7 +1,61 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingsStatus, locationLogs } from "@/shared/schema";
+import { bookingsStatus, locationLogs, locations } from "@/shared/schema";
 import { eq } from "drizzle-orm";
+
+interface ExternalLocationPayload {
+  timestamp: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  status: "BEFORE_PICKUP";
+}
+
+async function sendLocationToExternalAPI(
+  bookingRef: string,
+  latitude: number,
+  longitude: number
+): Promise<{ success: boolean; errorMessage?: string }> {
+  try {
+    const payload: ExternalLocationPayload = {
+      timestamp: new Date().toISOString(),
+      location: {
+        lat: latitude,
+        lng: longitude,
+      },
+      status: "BEFORE_PICKUP",
+    };
+
+    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/location`;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.VITE_BASE_API_KEY || "",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`External API error for ${bookingRef}:`, response.status, errorText);
+      return {
+        success: false,
+        errorMessage: `External API returned ${response.status}: ${errorText}`,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(`Exception calling external API for ${bookingRef}:`, error);
+    return {
+      success: false,
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
 
 export async function POST(
   request: Request,
@@ -9,8 +63,10 @@ export async function POST(
 ) {
   try {
     const { ref } = await params;
+    const body = await request.json();
+    const { locationId } = body;
 
-    // Check if booking exists and hasn't sent location yet
+    // Check if booking exists
     const booking = await db.query.bookingsStatus.findFirst({
       where: eq(bookingsStatus.bookingRef, ref),
     });
@@ -29,21 +85,51 @@ export async function POST(
       );
     }
 
-    // Mock external API call (will be implemented later)
-    const location = "-4;4";
-    const success = true;
-    const errorMessage = null;
+    // Determine which location to use
+    let selectedLocation;
+    if (locationId) {
+      // Use provided location ID
+      selectedLocation = await db.query.locations.findFirst({
+        where: eq(locations.id, locationId),
+      });
+    } else if (booking.selectedLocationId) {
+      // Use booking's selected location
+      selectedLocation = await db.query.locations.findFirst({
+        where: eq(locations.id, booking.selectedLocationId),
+      });
+    }
 
-    // Log the location send attempt
+    if (!selectedLocation) {
+      return NextResponse.json(
+        { message: "No location selected for this booking" },
+        { status: 400 }
+      );
+    }
+
+    // Call external API
+    const { success, errorMessage } = await sendLocationToExternalAPI(
+      ref,
+      selectedLocation.latitude,
+      selectedLocation.longitude
+    );
+
+    // Log the attempt
     await db.insert(locationLogs).values({
       bookingRef: ref,
-      location,
+      location: `${selectedLocation.latitude};${selectedLocation.longitude}`,
       sendType: "manual",
       success,
-      errorMessage,
+      errorMessage: errorMessage || null,
     });
 
-    // Update booking status
+    if (!success) {
+      return NextResponse.json(
+        { message: errorMessage || "Failed to send location to external API" },
+        { status: 500 }
+      );
+    }
+
+    // Update booking status on success
     await db
       .update(bookingsStatus)
       .set({
@@ -55,7 +141,11 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Location sent successfully",
-      location,
+      location: selectedLocation.name,
+      coordinates: {
+        lat: selectedLocation.latitude,
+        lng: selectedLocation.longitude,
+      },
     });
   } catch (error) {
     console.error("Error sending location:", error);

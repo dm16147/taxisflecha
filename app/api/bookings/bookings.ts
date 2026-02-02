@@ -46,22 +46,42 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
 
         const data = JSON.parse(bodyText);
 
-        const values = Object.values(data.bookings ?? {}).map((b: any) => ({
-            bookingRef: b.ref,
-            type,
-            status: b.status,
-            autoSendLocation: false,
-            driverId: null,
-            locationSent: false,
-            updatedAt: new Date(),
-        }));
+        // Extract pickup dates and prepare values with pickupDate
+        const values = Object.values(data.bookings ?? {}).map((b: any) => {
+            // Determine pickup date based on booking type
+            let pickupDate: Date | null = null;
+
+            if (type === "arrivals" && b.arrival) {
+                const dateStr = b.arrival.pickupdate || b.arrival.arrivaldate;
+                pickupDate = dateStr ? new Date(dateStr) : null;
+            } else if (type === "departures" && b.departure) {
+                const dateStr = b.departure.pickupdate || b.departure.departuredate;
+                pickupDate = dateStr ? new Date(dateStr) : null;
+            }
+
+            return {
+                bookingRef: b.ref,
+                type,
+                status: b.status,
+                pickupDate,
+                autoSendLocation: false,
+                driverId: null,
+                locationSent: false,
+                updatedAt: new Date(),
+            };
+        });
 
         if (values.length > 0) {
             await db
                 .insert(bookingsStatus)
                 .values(values)
-                .onConflictDoNothing({
+                .onConflictDoUpdate({
                     target: bookingsStatus.bookingRef,
+                    set: {
+                        status: eq(bookingsStatus.bookingRef, bookingsStatus.bookingRef),
+                        pickupDate: eq(bookingsStatus.bookingRef, bookingsStatus.bookingRef),
+                        updatedAt: new Date(),
+                    },
                 });
         }
 

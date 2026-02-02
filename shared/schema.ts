@@ -21,6 +21,7 @@ export const bookingsStatus = pgTable("bookings_status", {
   status: varchar("status", { length: 32 }).notNull(),
   pickupDate: timestamp("pickup_date", { withTimezone: true }),
   driverId: integer("driver_id").references(() => drivers.id),
+  selectedLocationId: integer("selected_location_id").references(() => locations.id),
   autoSendLocation: boolean("auto_send_location").notNull().default(false),
   locationSent: boolean("location_sent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -46,8 +47,8 @@ export const drivers = pgTable("drivers", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   mobilePhone: varchar("mobile_phone", { length: 32 }).notNull(),
-  preferredContactTypeId: serial("preferred_contact_type_id").notNull().references(() => contactTypes.id),
-  acceptedContactTypeId: serial("accepted_contact_type_id").notNull().references(() => contactTypes.id),
+  preferredContactTypeId: integer("preferred_contact_type_id").notNull().references(() => contactTypes.id),
+  acceptedContactTypeId: integer("accepted_contact_type_id").notNull().references(() => contactTypes.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
@@ -128,6 +129,12 @@ export const bookingDetailWithStatusSchema = bookingDetailSchema.extend({
     driver: z.object({
       id: z.number(),
       name: z.string(),
+    }).optional(),
+    selectedLocation: z.object({
+      id: z.number(),
+      name: z.string(),
+      latitude: z.number(),
+      longitude: z.number(),
     }).optional(),
     autoSendLocation: z.boolean(),
     locationSent: z.boolean(),
