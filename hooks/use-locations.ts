@@ -13,6 +13,16 @@ type PaginatedResponse = {
   };
 };
 
+// Fetch all locations without pagination (for dropdowns)
+async function fetchAllLocations(): Promise<Location[]> {
+  const response = await fetch(`${API_URL}?page=1&limit=1000`);
+  if (!response.ok) {
+    throw new Error("Erro ao buscar locais");
+  }
+  const data = await response.json();
+  return data.data;
+}
+
 // Fetch locais com paginação
 async function fetchLocations(page: number = 1, limit: number = 10): Promise<PaginatedResponse> {
   const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`);
@@ -69,6 +79,14 @@ export function useLocations(page: number = 1, limit: number = 10) {
   return useQuery({
     queryKey: ["locations", page, limit],
     queryFn: () => fetchLocations(page, limit),
+  });
+}
+
+// Hook para buscar todos os locais (sem paginação)
+export function useAllLocations() {
+  return useQuery({
+    queryKey: ["locations", "all"],
+    queryFn: fetchAllLocations,
   });
 }
 

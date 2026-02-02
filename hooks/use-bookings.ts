@@ -129,9 +129,11 @@ export function useSendLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ bookingRef }: { bookingRef: string }) => {
+    mutationFn: async ({ bookingRef, locationId }: { bookingRef: string; locationId?: number }) => {
       const response = await fetch(`/api/bookings/${bookingRef}/send-location`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationId }),
       });
 
       if (!response.ok) {
@@ -143,6 +145,31 @@ export function useSendLocation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+  });
+}
+
+export function useSelectLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ bookingRef, locationId }: { bookingRef: string; locationId: number }) => {
+      const response = await fetch(`/api/bookings/${bookingRef}/select-location`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao selecionar local');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["booking", variables.bookingRef] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });

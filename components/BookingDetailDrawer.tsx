@@ -7,8 +7,9 @@ import {
   Sheet,
   SheetContent
 } from "@/components/ui/sheet";
-import { useAssignDriver, useBookingDetail, useForceLocation, useSendLocation } from "@/hooks/use-bookings";
+import { useAssignDriver, useBookingDetail, useForceLocation, useSendLocation, useSelectLocation } from "@/hooks/use-bookings";
 import { useDrivers } from "@/hooks/use-drivers";
+import { useAllLocations } from "@/hooks/use-locations";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -33,12 +34,15 @@ interface BookingDetailDrawerProps {
 export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetailDrawerProps) {
   const { data, isLoading } = useBookingDetail(refId);
   const { data: driversData, isLoading: isLoadingDrivers } = useDrivers();
+  const { data: locationsData, isLoading: isLoadingLocations } = useAllLocations();
   const assignDriver = useAssignDriver();
   const forceLocation = useForceLocation();
   const sendLocation = useSendLocation();
+  const selectLocation = useSelectLocation();
   const { toast } = useToast();
 
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [isReassigning, setIsReassigning] = useState<boolean>(false);
 
   const booking = data?.booking;
@@ -101,8 +105,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     } else if (open) {
       setSelectedDriver(null);
     }
+    if (open && bookingStatus?.selectedLocation?.id) {
+      setSelectedLocationId(bookingStatus.selectedLocation.id);
+    } else if (open) {
+      setSelectedLocationId(null);
+    }
     if (open) setIsReassigning(false);
-  }, [open, bookingStatus?.driver]);
+  }, [open, bookingStatus?.driver, bookingStatus?.selectedLocation]);
 
   const handleAssignDriver = () => {
     if (!refId || !selectedDriver) return;
@@ -157,6 +166,30 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     setSelectedDriver(bookingStatus?.driver?.id ?? null);
     setIsReassigning(false);
   }
+
+  const handleLocationSelect = (locationId: string) => {
+    if (!refId) return;
+
+    const locId = Number(locationId);
+    setSelectedLocationId(locId);
+
+    selectLocation.mutate({ bookingRef: refId, locationId: locId }, {
+      onSuccess: () => {
+        const location = locationsData?.find(l => l.id === locId);
+        toast({
+          title: "Local selecionada",
+          description: `${location?.name} foi selecionada para esta reserva`,
+        });
+      },
+      onError: (err) => {
+        toast({
+          variant: "destructive",
+          title: "Falha ao enviar local",
+          description: err.message
+        });
+      }
+    });
+  };
 
   const handleSendLocation = () => {
     if (!refId) return;
@@ -391,40 +424,93 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   </div>
                 </div>
 
-                {/* Send Location Button */}
-                {canSendLocation && !locationAlreadySent && (
-                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold text-white">Pronto para enviar local</h4>
-                        </div>
-                        <p className="text-xs text-zinc-400">
-                          O tempo de transferência é de 30 minutos. Envie a local para notificar o passageiro.
-                        </p>
+                {/* Location Selection */}
+                <div className="bg-card rounded-xl p-5 border border-white/5">
+                  <label className="text-sm text-zinc-400 mb-2 block">Selecionar local para emissão</label>
+                  <Select
+                    value={selectedLocationId?.toString() || ""}
+                    onValueChange={handleLocationSelect}
+                    disabled={selectLocation.isPending || isLoadingLocations}
+                  >
+                    <SelectTrigger className="w-full bg-zinc-900 border-zinc-700">
+                      <SelectValue placeholder="Escolha uma local..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                      {isLoadingLocations ? (
+                        <SelectItem value="loading" disabled className="text-zinc-500">
+                          A carregar locais...
+                        </SelectItem>
+                      ) : locationsData && locationsData.length > 0 ? (
+                        locationsData.map(location => (
+                          <SelectItem key={location.id} value={location.id.toString()} className="focus:bg-zinc-800 focus:text-primary">
+                            {location.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled className="text-zinc-500">
+                          Sem locais disponíveis
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {selectedLocationId && bookingStatus?.selectedLocation && (
+                    <p className="text-xs text-zinc-500 mt-2">
+                      Local selecionada: <span className="text-primary font-medium">{bookingStatus.selectedLocation.name}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Send Location Button - Only when within 30min window and not sent yet */}
+                <div className={cn(
+                  "rounded-xl p-5 border transition-all",
+                  canSendLocation && !locationAlreadySent && selectedLocationId
+                    ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20"
+                    : "bg-zinc-900/30 border-white/5"
+                )}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className={cn("h-4 w-4", canSendLocation && !locationAlreadySent && selectedLocationId ? "text-primary" : "text-zinc-600")} />
+                        <h4 className={cn("text-sm font-semibold", canSendLocation && !locationAlreadySent && selectedLocationId ? "text-white" : "text-zinc-500")}>
+                          {locationAlreadySent
+                            ? "Local já foi enviada"
+                            : canSendLocation && selectedLocationId
+                              ? "Pronto para enviar local"
+                              : !selectedLocationId
+                                ? "Selecione uma local primeiro"
+                                : "Fora da janela de envio"}
+                        </h4>
                       </div>
-                      <Button
-                        onClick={handleSendLocation}
-                        disabled={sendLocation.isPending}
-                        className="bg-primary hover:bg-primary/90 font-semibold whitespace-nowrap"
-                        size="sm"
-                      >
-                        {sendLocation.isPending ? (
-                          <>
-                            <RotateCw className="h-3 w-3 mr-1.5 animate-spin" />
-                            A enviar...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="h-3 w-3 mr-1.5" />
-                            Enviar local
-                          </>
-                        )}
-                      </Button>
+                      <p className="text-xs text-zinc-400">
+                        {locationAlreadySent
+                          ? "A local desta reserva já foi enviada para o sistema externo."
+                          : canSendLocation && selectedLocationId
+                            ? "O tempo de transferência é de 30 minutos. Envie a local para notificar o sistema externo."
+                            : !selectedLocationId
+                              ? "Escolha uma local da lista acima para poder enviar."
+                              : "O envio manual está disponível apenas dentro da janela de 30 minutos antes do horário de recolha."}
+                      </p>
                     </div>
+                    <Button
+                      onClick={handleSendLocation}
+                      disabled={sendLocation.isPending || !canSendLocation || locationAlreadySent || !selectedLocationId}
+                      className="bg-primary hover:bg-primary/90 font-semibold whitespace-nowrap disabled:opacity-50"
+                      size="sm"
+                    >
+                      {sendLocation.isPending ? (
+                        <>
+                          <RotateCw className="h-3 w-3 mr-1.5 animate-spin" />
+                          A enviar...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3 w-3 mr-1.5" />
+                          Enviar local
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
 
             </div>
