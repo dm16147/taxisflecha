@@ -20,6 +20,7 @@ export const bookingsStatus = pgTable("bookings_status", {
   type: varchar("type", { length: 32 }).notNull(),
   status: varchar("status", { length: 32 }).notNull(),
   pickupDate: timestamp("pickup_date", { withTimezone: true }),
+  lastActionDate: timestamp("last_action_date", { withTimezone: true }),
   driverId: integer("driver_id").references(() => drivers.id),
   selectedLocationId: integer("selected_location_id").references(() => locations.id),
   autoSendLocation: boolean("auto_send_location").notNull().default(false),
