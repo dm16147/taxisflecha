@@ -79,6 +79,13 @@ type SendResult = {
 
 export async function POST(request: Request) {
   try {
+    // Verify cron secret for Vercel Cron jobs
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.warn("Unauthorized cron attempt");
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const now = new Date();
     const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
 
