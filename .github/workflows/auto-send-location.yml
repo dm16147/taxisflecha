@@ -1,0 +1,27 @@
+name: Auto Send Location
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  call-auto-send-location:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call auto-send-location endpoint
+        env:
+          AUTO_SEND_URL: ${{ secrets.AUTO_SEND_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$AUTO_SEND_URL" ]; then
+            echo "AUTO_SEND_URL secret is missing" >&2
+            exit 1
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET secret is missing" >&2
+            exit 1
+          fi
+          curl -sS -X POST "$AUTO_SEND_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json"
