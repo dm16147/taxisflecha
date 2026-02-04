@@ -39,6 +39,19 @@ export const locationLogs = pgTable("location_logs", {
   sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow(),
 });
 
+export const cronLogs = pgTable("cron_logs", {
+  id: serial("id").primaryKey(),
+  jobName: varchar("job_name", { length: 64 }).notNull(),
+  status: varchar("status", { length: 32 }).notNull(),
+  requestId: varchar("request_id", { length: 64 }),
+  successCount: integer("success_count").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  skippedCount: integer("skipped_count").notNull().default(0),
+  errorMessage: varchar("error_message", { length: 512 }),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+});
+
 export const contactTypes = pgTable("contact_types", {
   id: serial("id").primaryKey(),
   description: varchar("description", { length: 64 }).notNull().unique(),

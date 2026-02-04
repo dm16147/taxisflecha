@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingsStatus, locationLogs, locations } from "@/shared/schema";
+import { bookingsStatus, cronLogs, locationLogs, locations } from "@/shared/schema";
 import { eq, and, lte, gte, inArray } from "drizzle-orm";
 
 interface ExternalLocationPayload {
@@ -78,6 +78,7 @@ type SendResult = {
 };
 
 export async function POST(request: Request) {
+  let cronLogId: number | undefined;
   try {
     // Verify cron secret for Vercel Cron jobs
     const authHeader = request.headers.get('authorization');
@@ -87,6 +88,15 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
+    const requestId = request.headers.get("x-vercel-id") || crypto.randomUUID();
+    console.info("auto-send-location started", { requestId, now: now.toISOString() });
+    const cronLog = await db.insert(cronLogs).values({
+      jobName: "auto-send-location",
+      status: "started",
+      requestId,
+      startedAt: now,
+    }).returning({ id: cronLogs.id });
+    cronLogId = cronLog[0]?.id;
     const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
 
     // Fetch all bookings with autoSendLocation = true, locationSent = false,
@@ -248,6 +258,25 @@ export async function POST(request: Request) {
         .where(inArray(bookingsStatus.bookingRef, successfulBookingRefs));
     }
 
+    if (cronLogId) {
+      await db
+        .update(cronLogs)
+        .set({
+          status: results.failed > 0 ? "completed_with_errors" : "completed",
+          successCount: results.success,
+          failedCount: results.failed,
+          skippedCount: results.skipped,
+          finishedAt: new Date(),
+        })
+        .where(eq(cronLogs.id, cronLogId));
+    }
+
+    console.info("auto-send-location completed", {
+      success: results.success,
+      failed: results.failed,
+      skipped: results.skipped,
+    });
+
     return NextResponse.json({
       success: true,
       message: `Auto-send completed: ${results.success} successful, ${results.failed} failed, ${results.skipped} skipped`,
@@ -255,6 +284,28 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error in auto-send location:", error);
+    try {
+      if (cronLogId) {
+        await db
+          .update(cronLogs)
+          .set({
+            status: "failed",
+            errorMessage: error instanceof Error ? error.message : "Unknown error",
+            finishedAt: new Date(),
+          })
+          .where(eq(cronLogs.id, cronLogId));
+      } else {
+        await db.insert(cronLogs).values({
+          jobName: "auto-send-location",
+          status: "failed",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
+          startedAt: new Date(),
+          finishedAt: new Date(),
+        });
+      }
+    } catch {
+      // ignore logging failures
+    }
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }
