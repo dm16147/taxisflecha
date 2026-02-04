@@ -81,10 +81,21 @@ export async function POST(request: Request) {
   let cronLogId: number | undefined;
   try {
     // Verify cron secret for Vercel Cron jobs
+    const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.warn("Unauthorized cron attempt");
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const headerSecret = request.headers.get('x-cron-secret');
+    const url = new URL(request.url);
+    const querySecret = url.searchParams.get('secret');
+
+    if (cronSecret) {
+      const bearerMatch = authHeader === `Bearer ${cronSecret}`;
+      const headerMatch = headerSecret === cronSecret;
+      const queryMatch = querySecret === cronSecret;
+
+      if (!bearerMatch && !headerMatch && !queryMatch) {
+        console.warn("Unauthorized cron attempt");
+        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const now = new Date();
