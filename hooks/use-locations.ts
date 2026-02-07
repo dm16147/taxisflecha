@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { Location, InsertLocation, UpdateLocation } from "@/shared/schema";
 
 const API_URL = "/api/locations";
@@ -13,11 +13,39 @@ type PaginatedResponse = {
   };
 };
 
+type SearchParams = {
+  query: string;
+  pageParam?: number;
+  limit?: number;
+};
+
+async function buildRequestError(
+  response: Response,
+  fallbackMessage: string,
+  context: string
+) {
+  let message = fallbackMessage;
+  try {
+    const data = await response.json();
+    message = data?.message || data?.error || fallbackMessage;
+  } catch {
+    // ignore parse errors
+  }
+  const requestId = response.headers.get("x-request-id");
+  const finalMessage = requestId ? `${message} (req: ${requestId})` : message;
+  console.error(context, {
+    status: response.status,
+    requestId: requestId || undefined,
+    message: finalMessage,
+  });
+  return new Error(finalMessage);
+}
+
 // Fetch all locations without pagination (for dropdowns)
 async function fetchAllLocations(): Promise<Location[]> {
   const response = await fetch(`${API_URL}?page=1&limit=1000`);
   if (!response.ok) {
-    throw new Error("Erro ao buscar locais");
+    throw await buildRequestError(response, "Erro ao buscar locais", "fetchAllLocations");
   }
   const data = await response.json();
   return data.data;
@@ -27,7 +55,22 @@ async function fetchAllLocations(): Promise<Location[]> {
 async function fetchLocations(page: number = 1, limit: number = 10): Promise<PaginatedResponse> {
   const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`);
   if (!response.ok) {
-    throw new Error("Erro ao buscar locai");
+    throw await buildRequestError(response, "Erro ao buscar locais", "fetchLocations");
+  }
+  return response.json();
+}
+
+// Fetch locations with search and pagination
+async function searchLocations({ query, pageParam = 1, limit = 10 }: SearchParams): Promise<PaginatedResponse> {
+  const params = new URLSearchParams({
+    page: String(pageParam),
+    limit: String(limit),
+  });
+  if (query) params.set("q", query);
+
+  const response = await fetch(`${API_URL}?${params.toString()}`);
+  if (!response.ok) {
+    throw await buildRequestError(response, "Erro ao buscar locais", "searchLocations");
   }
   return response.json();
 }
@@ -40,7 +83,7 @@ async function createLocation(data: InsertLocation): Promise<Location> {
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    throw new Error("Erro ao criar local");
+    throw await buildRequestError(response, "Erro ao criar local", "createLocation");
   }
   return response.json();
 }
@@ -59,7 +102,7 @@ async function updateLocation({
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    throw new Error("Erro ao atualizar local");
+    throw await buildRequestError(response, "Erro ao atualizar local", "updateLocation");
   }
   return response.json();
 }
@@ -70,7 +113,7 @@ async function deleteLocation(id: number): Promise<void> {
     method: "DELETE",
   });
   if (!response.ok) {
-    throw new Error("Erro ao remover local");
+    throw await buildRequestError(response, "Erro ao remover local", "deleteLocation");
   }
 }
 
@@ -87,6 +130,20 @@ export function useAllLocations() {
   return useQuery({
     queryKey: ["locations", "all"],
     queryFn: fetchAllLocations,
+  });
+}
+
+// Hook para buscar locais com pesquisa e paginação incremental
+export function useLocationSearch(query: string, limit: number = 10) {
+  return useInfiniteQuery({
+    queryKey: ["locations", "search", query, limit],
+    queryFn: ({ pageParam }) => searchLocations({ query, pageParam, limit }),
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!query,
   });
 }
 

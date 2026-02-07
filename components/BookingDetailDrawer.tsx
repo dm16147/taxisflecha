@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "@/components/ui/command";
 import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
@@ -9,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { useAssignDriver, useBookingDetail, useForceLocation, useSendLocation, useSelectLocation } from "@/hooks/use-bookings";
 import { useDrivers } from "@/hooks/use-drivers";
-import { useAllLocations } from "@/hooks/use-locations";
+import { useLocationSearch } from "@/hooks/use-locations";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -34,7 +36,16 @@ interface BookingDetailDrawerProps {
 export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetailDrawerProps) {
   const { data, isLoading } = useBookingDetail(refId);
   const { data: driversData, isLoading: isLoadingDrivers } = useDrivers();
-  const { data: locationsData, isLoading: isLoadingLocations } = useAllLocations();
+  const [locationQuery, setLocationQuery] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string>("");
+  const [locationPopoverOpen, setLocationPopoverOpen] = useState<boolean>(false);
+  const {
+    data: locationPages,
+    isLoading: isLoadingLocations,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useLocationSearch(debouncedQuery, 10);
   const assignDriver = useAssignDriver();
   const forceLocation = useForceLocation();
   const sendLocation = useSendLocation();
@@ -113,6 +124,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     if (open) setIsReassigning(false);
   }, [open, bookingStatus?.driver, bookingStatus?.selectedLocation]);
 
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedQuery(locationQuery.trim());
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [locationQuery]);
+
   const handleAssignDriver = () => {
     if (!refId || !selectedDriver) return;
 
@@ -175,7 +193,8 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
     selectLocation.mutate({ bookingRef: refId, locationId: locId }, {
       onSuccess: () => {
-        const location = locationsData?.find(l => l.id === locId);
+        const allLocations = locationPages?.pages.flatMap(p => p.data) ?? [];
+        const location = allLocations.find(l => l.id === locId);
         toast({
           title: "Local selecionada",
           description: `${location?.name} foi selecionada para esta reserva`,
@@ -427,32 +446,54 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 {/* Location Selection */}
                 <div className="bg-card rounded-xl p-5 border border-white/5">
                   <label className="text-sm text-zinc-400 mb-2 block">Selecionar local para emissão</label>
-                  <Select
-                    value={selectedLocationId?.toString() || ""}
-                    onValueChange={handleLocationSelect}
-                    disabled={selectLocation.isPending || isLoadingLocations}
-                  >
-                    <SelectTrigger className="w-full bg-zinc-900 border-zinc-700">
-                      <SelectValue placeholder="Escolha uma local..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
-                      {isLoadingLocations ? (
-                        <SelectItem value="loading" disabled className="text-zinc-500">
-                          A carregar locais...
-                        </SelectItem>
-                      ) : locationsData && locationsData.length > 0 ? (
-                        locationsData.map(location => (
-                          <SelectItem key={location.id} value={location.id.toString()} className="focus:bg-zinc-800 focus:text-primary">
-                            {location.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="none" disabled className="text-zinc-500">
-                          Sem locais disponíveis
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between bg-zinc-900 border-zinc-700 text-zinc-200"
+                        disabled={selectLocation.isPending}
+                      >
+                        {bookingStatus?.selectedLocation?.name || "Escolha uma local..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-full min-w-[280px] bg-zinc-900 border-zinc-800">
+                      <Command>
+                        <CommandInput
+                          placeholder="Pesquisar local..."
+                          value={locationQuery}
+                          onValueChange={setLocationQuery}
+                        />
+                        <CommandList>
+                          <CommandEmpty>
+                            {debouncedQuery ? "Sem resultados" : "Digite para pesquisar"}
+                          </CommandEmpty>
+                          {(locationPages?.pages.flatMap(p => p.data) ?? []).map((location) => (
+                            <CommandItem
+                              key={location.id}
+                              value={location.name}
+                              onSelect={() => {
+                                handleLocationSelect(String(location.id));
+                                setLocationPopoverOpen(false);
+                              }}
+                            >
+                              {location.name}
+                            </CommandItem>
+                          ))}
+                          {hasNextPage && (
+                            <CommandItem
+                              onSelect={() => fetchNextPage()}
+                              disabled={isFetchingNextPage}
+                            >
+                              {isFetchingNextPage ? "A carregar mais..." : "Carregar mais"}
+                            </CommandItem>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {isLoadingLocations && (
+                    <p className="text-xs text-zinc-500 mt-2">A carregar locais...</p>
+                  )}
                   {selectedLocationId && bookingStatus?.selectedLocation && (
                     <p className="text-xs text-zinc-500 mt-2">
                       Local selecionada: <span className="text-primary font-medium">{bookingStatus.selectedLocation.name}</span>

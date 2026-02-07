@@ -62,6 +62,7 @@ export async function POST(
   { params }: { params: Promise<{ ref: string }> }
 ) {
   try {
+    const requestId = request.headers.get("x-vercel-id") || crypto.randomUUID();
     const { ref } = await params;
     const body = await request.json();
     const { locationId } = body;
@@ -73,15 +74,15 @@ export async function POST(
 
     if (!booking) {
       return NextResponse.json(
-        { message: "Booking not found in database" },
-        { status: 404 }
+        { message: "Booking not found in database", requestId },
+        { status: 404, headers: { "x-request-id": requestId } }
       );
     }
 
     if (booking.locationSent) {
       return NextResponse.json(
-        { message: "Location already sent for this booking" },
-        { status: 400 }
+        { message: "Location already sent for this booking", requestId },
+        { status: 400, headers: { "x-request-id": requestId } }
       );
     }
 
@@ -101,8 +102,8 @@ export async function POST(
 
     if (!selectedLocation) {
       return NextResponse.json(
-        { message: "No location selected for this booking" },
-        { status: 400 }
+        { message: "No location selected for this booking", requestId },
+        { status: 400, headers: { "x-request-id": requestId } }
       );
     }
 
@@ -124,8 +125,8 @@ export async function POST(
 
     if (!success) {
       return NextResponse.json(
-        { message: errorMessage || "Failed to send location to external API" },
-        { status: 500 }
+        { message: errorMessage || "Failed to send location to external API", requestId },
+        { status: 500, headers: { "x-request-id": requestId } }
       );
     }
 
@@ -146,12 +147,14 @@ export async function POST(
         lat: selectedLocation.latitude,
         lng: selectedLocation.longitude,
       },
-    });
+      requestId,
+    }, { headers: { "x-request-id": requestId } });
   } catch (error) {
-    console.error("Error sending location:", error);
+    const requestId = crypto.randomUUID();
+    console.error("Error sending location:", { requestId, error });
     return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
+      { message: "Internal server error", requestId },
+      { status: 500, headers: { "x-request-id": requestId } }
     );
   }
 }

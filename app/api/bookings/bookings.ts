@@ -16,7 +16,9 @@ async function updatePickupDatesAsync(
     bookings: Record<string, any>
 ) {
     try {
-        const bookingRefs = Object.keys(bookings);
+        const bookingRefs = Object.values(bookings)
+            .map((booking: any) => booking?.ref)
+            .filter(Boolean);
         if (bookingRefs.length === 0) return;
 
         // Fetch existing records from DB
@@ -30,6 +32,8 @@ async function updatePickupDatesAsync(
             .from(bookingsStatus)
             .where(inArray(bookingsStatus.bookingRef, bookingRefs));
 
+        console.log(existingRecords)
+
         const existingMap = new Map(
             existingRecords.map(r => [r.bookingRef, {
                 pickupDate: r.pickupDate,
@@ -38,25 +42,29 @@ async function updatePickupDatesAsync(
             }])
         );
 
-        const directUpdates: Array<{ ref: string; newDate: Date }> = [];
-        const statusUpdates: Array<{ ref: string; status: string }> = [];
-        const detailFetchesNeeded: string[] = [];
+        const directUpdates: Array<{ ref: string; newDate: Date; lastActionDate: Date | null; status: string }> = [];
+        const statusUpdates: Array<{ ref: string; status: string; lastActionDate: Date | null }> = [];
+        const detailFetchesNeeded: Array<{ ref: string; lastActionDate: Date | null; status: string }> = [];
 
-        for (const [ref, booking] of Object.entries(bookings)) {
+        for (const booking of Object.values(bookings)) {
+            const ref = booking?.ref;
+            if (!ref) continue;
             const existing = existingMap.get(ref);
             const newLastActionDate = booking.lastactiondate ? new Date(booking.lastactiondate) : null;
             const newStatus = booking.status;
 
+            const hasChange = !existing?.lastActionDate || !newLastActionDate
+                ? true
+                : existing.lastActionDate.getTime() !== newLastActionDate.getTime() || existing.status !== newStatus;
+
             // Skip if no change detected via lastActionDate
-            if (existing?.lastActionDate && newLastActionDate &&
-                existing.lastActionDate.getTime() === newLastActionDate.getTime() &&
-                existing.status === newStatus) {
+            if (!hasChange) {
                 continue;
             }
 
             // If cancelled, update status only and skip pickup date
             if (newStatus === "PCAN" || newStatus === "ACAN") {
-                statusUpdates.push({ ref, status: newStatus });
+                statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 continue;
             }
 
@@ -65,11 +73,13 @@ async function updatePickupDatesAsync(
                 if (!arrivalDateStr) continue;
 
                 const arrivalDate = new Date(arrivalDateStr);
-                
+
                 // Update if dates differ or booking changed
-                if (!existing?.pickupDate || 
+                if (!existing?.pickupDate ||
                     existing.pickupDate.getTime() !== arrivalDate.getTime()) {
-                    directUpdates.push({ ref, newDate: arrivalDate });
+                    directUpdates.push({ ref, newDate: arrivalDate, lastActionDate: newLastActionDate, status: newStatus });
+                } else {
+                    statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 }
             } else if (type === "departures") {
                 const departureDateStr = booking.departuredate;
@@ -78,19 +88,21 @@ async function updatePickupDatesAsync(
                 const departureDate = new Date(departureDateStr);
 
                 // Fetch detail if dates differ or booking changed
-                if (!existing?.pickupDate || 
+                if (!existing?.pickupDate ||
                     existing.pickupDate.getTime() !== departureDate.getTime()) {
-                    detailFetchesNeeded.push(ref);
+                    detailFetchesNeeded.push({ ref, lastActionDate: newLastActionDate, status: newStatus });
+                } else {
+                    statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 }
             }
         }
 
         // Batch update statuses for cancelled bookings
         if (statusUpdates.length > 0) {
-            const updatePromises = statusUpdates.map(({ ref, status }) =>
+            const updatePromises = statusUpdates.map(({ ref, status, lastActionDate }) =>
                 db
                     .update(bookingsStatus)
-                    .set({ status, updatedAt: new Date() })
+                    .set({ status, lastActionDate, updatedAt: new Date() })
                     .where(eq(bookingsStatus.bookingRef, ref))
             );
             await Promise.all(updatePromises);
@@ -98,10 +110,10 @@ async function updatePickupDatesAsync(
 
         // Batch update arrivals (no API call needed)
         if (directUpdates.length > 0) {
-            const updatePromises = directUpdates.map(({ ref, newDate }) =>
+            const updatePromises = directUpdates.map(({ ref, newDate, lastActionDate, status }) =>
                 db
                     .update(bookingsStatus)
-                    .set({ pickupDate: newDate, updatedAt: new Date() })
+                    .set({ pickupDate: newDate, lastActionDate, status, updatedAt: new Date() })
                     .where(eq(bookingsStatus.bookingRef, ref))
             );
             await Promise.all(updatePromises);
@@ -109,26 +121,31 @@ async function updatePickupDatesAsync(
 
         // Fetch details for departures and update (parallel)
         if (detailFetchesNeeded.length > 0) {
-            const detailPromises = detailFetchesNeeded.map(async (ref) => {
+            const detailPromises = detailFetchesNeeded.map(async ({ ref, lastActionDate, status }) => {
                 try {
                     const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`;
                     const response = await fetch(url, { headers: headers() });
-                    
+
                     if (!response.ok) {
-                        console.error(`Failed to fetch detail for ${ref}`);
+                        console.error(`Failed to fetch detail for ${ref}, response: ${JSON.stringify(response)}`);
                         return null;
                     }
 
                     const data = await response.json();
-                    const pickupDateStr = data.booking?.departure?.pickupdate || 
-                                         data.booking?.departure?.departuredate;
-                    
+                    const pickupDateStr = data.booking?.departure?.pickupdate ||
+                        data.booking?.departure?.departuredate;
+
                     if (!pickupDateStr) return null;
 
                     const pickupDate = new Date(pickupDateStr);
                     await db
                         .update(bookingsStatus)
-                        .set({ pickupDate, updatedAt: new Date() })
+                        .set({
+                            pickupDate,
+                            lastActionDate,
+                            status,
+                            updatedAt: new Date(),
+                        })
                         .where(eq(bookingsStatus.bookingRef, ref));
 
                     return { ref, success: true };
