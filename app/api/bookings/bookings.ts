@@ -32,7 +32,6 @@ async function updatePickupDatesAsync(
             .from(bookingsStatus)
             .where(inArray(bookingsStatus.bookingRef, bookingRefs));
 
-        console.log(existingRecords)
 
         const existingMap = new Map(
             existingRecords.map(r => [r.bookingRef, {
