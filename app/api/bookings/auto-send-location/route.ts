@@ -27,7 +27,7 @@ async function sendLocationToExternalAPI(
       status: "BEFORE_PICKUP",
     };
 
-    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/location`;
+    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/vehicles/1/location`;
     
     const response = await fetch(url, {
       method: "POST",
