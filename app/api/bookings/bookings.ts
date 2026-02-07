@@ -209,6 +209,8 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
             updatedAt: new Date(),
         }));
 
+        console.log(values);
+
         if (values.length > 0) {
             await db
                 .insert(bookingsStatus)

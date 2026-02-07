@@ -15,7 +15,8 @@ export async function GET(
         const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`
 
         const response = await fetch(url, {
-            headers: headers()
+            headers: headers(),
+            cache: "no-store"
         })
 
         if (!response.ok) {
@@ -27,6 +28,8 @@ export async function GET(
         }
 
         const data = await response.json();
+
+        console.log(`Fetched booking ${ref}, details are: ${JSON.stringify(data)}`);
 
         // Extract pickup date from booking data
         let pickupDate: Date | null = null;

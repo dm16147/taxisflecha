@@ -2,60 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookingsStatus, locationLogs, locations } from "@/shared/schema";
 import { eq } from "drizzle-orm";
+import { sendBookingLocation } from "@/lib/external-api";
 
-interface ExternalLocationPayload {
-  timestamp: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  status: "BEFORE_PICKUP";
-}
-
-async function sendLocationToExternalAPI(
-  bookingRef: string,
-  latitude: number,
-  longitude: number
-): Promise<{ success: boolean; errorMessage?: string }> {
-  try {
-    const payload: ExternalLocationPayload = {
-      timestamp: new Date().toISOString(),
-      location: {
-        lat: latitude,
-        lng: longitude,
-      },
-      status: "BEFORE_PICKUP",
-    };
-
-    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/vehicles/1/location`;
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.VITE_BASE_API_KEY || "",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`External API error for ${bookingRef}:`, response.status, errorText);
-      return {
-        success: false,
-        errorMessage: `External API returned ${response.status}: ${errorText}`,
-      };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error(`Exception calling external API for ${bookingRef}:`, error);
-    return {
-      success: false,
-      errorMessage: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
 
 export async function POST(
   request: Request,
@@ -108,7 +56,7 @@ export async function POST(
     }
 
     // Call external API
-    const { success, errorMessage } = await sendLocationToExternalAPI(
+    const { success, errorMessage } = await sendBookingLocation(
       ref,
       selectedLocation.latitude,
       selectedLocation.longitude
