@@ -29,8 +29,6 @@ export async function GET(
 
         const data = await response.json();
 
-        console.log(`Fetched booking ${ref}, details are: ${JSON.stringify(data)}`);
-
         // Extract pickup date from booking data
         let pickupDate: Date | null = null;
         if (data.booking?.arrival) {

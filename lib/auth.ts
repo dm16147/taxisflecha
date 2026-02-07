@@ -62,8 +62,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     user.name = dbUser.name;
                     user.roles = dbUser.roles.split(",") as UserRole[];
 
-                    console.log(user.roles)
-
                     // Update last login time
                     await db
                         .update(users)

@@ -36,8 +36,6 @@ export default auth((req) => {
     }
 
     const roles = (session.user as any)?.roles || [];
-    console.log("User roles:", roles, "Type:", typeof roles, "Is Array:", Array.isArray(roles));
-    console.log("Checking for MANAGER role:", roles.includes("MANAGER"));
 
     if (!roles.includes("MANAGER")) {
       // Redirect to main page with error parameter
