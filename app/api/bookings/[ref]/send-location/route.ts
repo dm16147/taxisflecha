@@ -22,14 +22,14 @@ export async function POST(
 
     if (!booking) {
       return NextResponse.json(
-        { message: "Booking not found in database", requestId },
+        { message: "Reserva não encontrada na base de dados", requestId },
         { status: 404, headers: { "x-request-id": requestId } }
       );
     }
 
     if (booking.locationSent) {
       return NextResponse.json(
-        { message: "Location already sent for this booking", requestId },
+        { message: "Já foi enviada a localização para esta reserva", requestId },
         { status: 400, headers: { "x-request-id": requestId } }
       );
     }
@@ -50,7 +50,14 @@ export async function POST(
 
     if (!selectedLocation) {
       return NextResponse.json(
-        { message: "No location selected for this booking", requestId },
+        { message: "Deve ser selecionada uma localização para a reserva", requestId },
+        { status: 400, headers: { "x-request-id": requestId } }
+      );
+    }
+
+    if (!booking.vehicleIdentifier) {
+      return NextResponse.json(
+        { message: "Estado de aplicação inválido: Reserva não sem identificador de veículo", requestId },
         { status: 400, headers: { "x-request-id": requestId } }
       );
     }
@@ -58,6 +65,7 @@ export async function POST(
     // Call external API
     const { success, errorMessage } = await sendBookingLocation(
       ref,
+      booking.vehicleIdentifier,
       selectedLocation.latitude,
       selectedLocation.longitude
     );
@@ -73,7 +81,7 @@ export async function POST(
 
     if (!success) {
       return NextResponse.json(
-        { message: errorMessage || "Failed to send location to external API", requestId },
+        { message: errorMessage || "Falha ao enviar localização para a API externa", requestId },
         { status: 500, headers: { "x-request-id": requestId } }
       );
     }
@@ -89,7 +97,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: "Location sent successfully",
+      message: "Localização enviada com sucesso",
       location: selectedLocation.name,
       coordinates: {
         lat: selectedLocation.latitude,

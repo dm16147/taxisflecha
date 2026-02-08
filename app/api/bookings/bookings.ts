@@ -3,12 +3,23 @@ import { BookingType, bookingsStatus, drivers } from "@/shared/schema";
 import { NextResponse } from "next/server";
 import { inArray, eq } from "drizzle-orm";
 import { headers } from "@/lib/utils";
+import { randomBytes } from "crypto";
 
 function formatDateForApi(date: string): string {
     if (date.includes('T')) {
         date = date.split('T')[0];
     }
     return `${date}T00:00:00`;
+}
+
+function generateVehicleIdentifier(length: number = 40): string {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
+    const bytes = randomBytes(length);
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        result += charset[bytes[i] % charset.length];
+    }
+    return result;
 }
 
 async function updatePickupDatesAsync(
@@ -203,6 +214,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
             type,
             status: b.status,
             lastActionDate: b.lastactiondate ? new Date(b.lastactiondate) : null,
+            vehicleIdentifier: generateVehicleIdentifier(),
             autoSendLocation: false,
             driverId: null,
             locationSent: false,

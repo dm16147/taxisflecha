@@ -22,6 +22,7 @@ export const bookingsStatus = pgTable("bookings_status", {
   pickupDate: timestamp("pickup_date", { withTimezone: true }),
   lastActionDate: timestamp("last_action_date", { withTimezone: true }),
   driverId: integer("driver_id").references(() => drivers.id),
+  vehicleIdentifier: varchar("vehicle_identifier", { length: 40 }),
   selectedLocationId: integer("selected_location_id").references(() => locations.id),
   autoSendLocation: boolean("auto_send_location").notNull().default(false),
   locationSent: boolean("location_sent").notNull().default(false),
@@ -144,6 +145,7 @@ export const bookingDetailWithStatusSchema = bookingDetailSchema.extend({
       id: z.number(),
       name: z.string(),
     }).optional(),
+    vehicleIdentifier: z.string().optional(),
     selectedLocation: z.object({
       id: z.number(),
       name: z.string(),

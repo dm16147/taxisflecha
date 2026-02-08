@@ -1,11 +1,6 @@
 
 "use client";
 
-import { Car, Settings, LogIn, LogOut, User } from "lucide-react";
-import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
-import { signIn, signOut } from "next-auth/react";
-import { useAuth, useIsManager } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
+import { Car, LogIn, LogOut, Settings, User } from "lucide-react";
+import { signIn, signOut } from "next-auth/react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 export function Header() {
   const { user, isAuthenticated, isLoading } = useAuth();
