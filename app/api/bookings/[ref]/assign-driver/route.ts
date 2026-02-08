@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
-import { storage } from "@/lib/storage";
 import { db } from "@/lib/db";
 import { bookingsStatus } from "@/shared/schema";
 import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 export async function POST(
     request: Request,

@@ -1,49 +1,84 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingsStatus, locationLogs } from "@/shared/schema";
+import { bookingsStatus, locationLogs, locations } from "@/shared/schema";
 import { eq } from "drizzle-orm";
+import { sendBookingLocation } from "@/lib/external-api";
+
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ ref: string }> }
 ) {
   try {
+    const requestId = request.headers.get("x-vercel-id") || crypto.randomUUID();
     const { ref } = await params;
+    const body = await request.json();
+    const { locationId } = body;
 
-    // Check if booking exists and hasn't sent location yet
+    // Check if booking exists
     const booking = await db.query.bookingsStatus.findFirst({
       where: eq(bookingsStatus.bookingRef, ref),
     });
 
     if (!booking) {
       return NextResponse.json(
-        { message: "Booking not found in database" },
-        { status: 404 }
+        { message: "Booking not found in database", requestId },
+        { status: 404, headers: { "x-request-id": requestId } }
       );
     }
 
     if (booking.locationSent) {
       return NextResponse.json(
-        { message: "Location already sent for this booking" },
-        { status: 400 }
+        { message: "Location already sent for this booking", requestId },
+        { status: 400, headers: { "x-request-id": requestId } }
       );
     }
 
-    // Mock external API call (will be implemented later)
-    const location = "-4;4";
-    const success = true;
-    const errorMessage = null;
+    // Determine which location to use
+    let selectedLocation;
+    if (locationId) {
+      // Use provided location ID
+      selectedLocation = await db.query.locations.findFirst({
+        where: eq(locations.id, locationId),
+      });
+    } else if (booking.selectedLocationId) {
+      // Use booking's selected location
+      selectedLocation = await db.query.locations.findFirst({
+        where: eq(locations.id, booking.selectedLocationId),
+      });
+    }
 
-    // Log the location send attempt
+    if (!selectedLocation) {
+      return NextResponse.json(
+        { message: "No location selected for this booking", requestId },
+        { status: 400, headers: { "x-request-id": requestId } }
+      );
+    }
+
+    // Call external API
+    const { success, errorMessage } = await sendBookingLocation(
+      ref,
+      selectedLocation.latitude,
+      selectedLocation.longitude
+    );
+
+    // Log the attempt
     await db.insert(locationLogs).values({
       bookingRef: ref,
-      location,
+      location: `${selectedLocation.latitude};${selectedLocation.longitude}`,
       sendType: "manual",
       success,
-      errorMessage,
+      errorMessage: errorMessage || null,
     });
 
-    // Update booking status
+    if (!success) {
+      return NextResponse.json(
+        { message: errorMessage || "Failed to send location to external API", requestId },
+        { status: 500, headers: { "x-request-id": requestId } }
+      );
+    }
+
+    // Update booking status on success
     await db
       .update(bookingsStatus)
       .set({
@@ -55,13 +90,19 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Location sent successfully",
-      location,
-    });
+      location: selectedLocation.name,
+      coordinates: {
+        lat: selectedLocation.latitude,
+        lng: selectedLocation.longitude,
+      },
+      requestId,
+    }, { headers: { "x-request-id": requestId } });
   } catch (error) {
-    console.error("Error sending location:", error);
+    const requestId = crypto.randomUUID();
+    console.error("Error sending location:", { requestId, error });
     return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
+      { message: "Internal server error", requestId },
+      { status: 500, headers: { "x-request-id": requestId } }
     );
   }
 }

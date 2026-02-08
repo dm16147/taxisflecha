@@ -3,14 +3,19 @@ import { db } from "@/lib/db";
 import { locations } from "@/shared/schema";
 import { updateLocationSchema } from "@/shared/schema";
 import { eq } from "drizzle-orm";
+import { requireRole } from "@/lib/auth-helpers";
 
-// GET - Buscar um local específico
+// GET - Get specific location (MANAGER only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = parseInt(params.id);
+    // Require MANAGER role
+    await requireRole("MANAGER");
+
+    const { id } = await params;
+    const locationId = parseInt(id);
     const [location] = await db
       .select()
       .from(locations)
@@ -25,6 +30,11 @@ export async function GET(
 
     return NextResponse.json(location);
   } catch (error) {
+    // If error is a NextResponse (from requireRole), return it
+    if (error instanceof NextResponse) {
+      return error;
+    }
+
     console.error("Erro ao buscar local:", error);
     return NextResponse.json(
       { error: "Erro ao buscar local" },
@@ -33,13 +43,17 @@ export async function GET(
   }
 }
 
-// PATCH - Atualizar local
+// PATCH - Update location (MANAGER only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = parseInt(params.id);
+    // Require MANAGER role
+    await requireRole("MANAGER");
+
+    const { id } = await params;
+    const locationId = parseInt(id);
     const body = await request.json();
     const validatedData = updateLocationSchema.parse(body);
 
@@ -58,6 +72,11 @@ export async function PATCH(
 
     return NextResponse.json(updatedLocation);
   } catch (error) {
+    // If error is a NextResponse (from requireRole), return it
+    if (error instanceof NextResponse) {
+      return error;
+    }
+
     console.error("Erro ao atualizar local:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar local", details: error },
@@ -66,13 +85,17 @@ export async function PATCH(
   }
 }
 
-// DELETE - Remover local
+// DELETE - Remove location (MANAGER only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const locationId = parseInt(params.id);
+    // Require MANAGER role
+    await requireRole("MANAGER");
+
+    const { id } = await params;
+    const locationId = parseInt(id);
 
     const [deletedLocation] = await db
       .delete(locations)
@@ -88,6 +111,11 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Local removida com sucesso" });
   } catch (error) {
+    // If error is a NextResponse (from requireRole), return it
+    if (error instanceof NextResponse) {
+      return error;
+    }
+
     console.error("Erro ao remover local:", error);
     return NextResponse.json(
       { error: "Erro ao remover local" },

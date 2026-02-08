@@ -8,12 +8,15 @@ import DashboardControlsDesktop from "@/components/pages/DashboardControlsDeskto
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBookings } from "@/hooks/use-bookings";
+import { useAuth } from "@/hooks/use-auth";
 import type { BookingListItem, BookingType } from "@/shared/schema";
 import { endOfWeek, format, startOfWeek } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, LogIn } from "lucide-react";
 import { useState } from "react";
 import { BookingCard } from "../BookingCard";
 import { pt } from "date-fns/locale/pt";
+import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
@@ -29,6 +32,7 @@ export default function Dashboard() {
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
 
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo);
 
   const handleBookingClick = (ref: string) => {
@@ -112,9 +116,21 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : error ? (
-              <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
-                Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
-              </div>
+              !isAuthenticated ? (
+                <div className="rounded-2xl border border-amber-900/50 bg-amber-950/20 p-8 text-center">
+                  <LogIn className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-amber-200 mb-2">Autenticação necessária</h3>
+                  <p className="text-amber-300/80 mb-4">Por favor, faça login para visualizar as reservas.</p>
+                  <Button onClick={() => signIn('google')} className="mx-auto">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Fazer Login com Google
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
+                  Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
+                </div>
+              )
             ) : bookingList.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
@@ -141,9 +157,21 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : error ? (
-              <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
-                Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
-              </div>
+              !isAuthenticated ? (
+                <div className="rounded-2xl border border-amber-900/50 bg-amber-950/20 p-8 text-center">
+                  <LogIn className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-amber-200 mb-2">Autenticação necessária</h3>
+                  <p className="text-amber-300/80 mb-4">Por favor, faça login para visualizar as reservas.</p>
+                  <Button onClick={() => signIn('google')} className="mx-auto">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Fazer Login com Google
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-red-900/50 bg-red-950/20 p-8 text-center text-red-200">
+                  Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
+                </div>
+              )
             ) : bookingList.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />

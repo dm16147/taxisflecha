@@ -14,3 +14,4 @@ vite.config.ts.*
 
 .venv
 migrations
+.vercel
