@@ -44,6 +44,7 @@ export async function GET(
             .select({
                 driverId: bookingsStatus.driverId,
                 driverName: drivers.name,
+                vehicleIdentifier: bookingsStatus.vehicleIdentifier,
                 selectedLocationId: bookingsStatus.selectedLocationId,
                 locationName: locations.name,
                 locationLatitude: locations.latitude,
@@ -74,6 +75,7 @@ export async function GET(
                     id: bookingStatusRecord[0].driverId,
                     name: bookingStatusRecord[0].driverName,
                 } : undefined,
+                vehicleIdentifier: bookingStatusRecord[0].vehicleIdentifier ?? undefined,
                 selectedLocation: bookingStatusRecord[0].selectedLocationId ? {
                     id: bookingStatusRecord[0].selectedLocationId,
                     name: bookingStatusRecord[0].locationName!,

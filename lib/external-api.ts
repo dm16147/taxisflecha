@@ -15,6 +15,7 @@ function formatTimestamp(date: Date): string {
 
 export async function sendBookingLocation(
   bookingRef: string,
+  vehicleIdentifier: string,
   latitude: number,
   longitude: number
 ): Promise<{ success: boolean; errorMessage?: string }> {
@@ -28,7 +29,7 @@ export async function sendBookingLocation(
       status: "BEFORE_PICKUP",
     };
 
-    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/vehicles/1/location`;
+    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/vehicles/${vehicleIdentifier}/location`;
 
     const response = await fetch(url, {
       method: "POST",

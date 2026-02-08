@@ -8,6 +8,7 @@ import { sendBookingLocation } from "@/lib/external-api";
 type BookingToSend = {
   bookingRef: string;
   pickupDate: Date | null;
+  vehicleIdentifier: string | null;
   selectedLocationId: number | null;
   locationId: number | null;
   locationName: string | null;
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
       .select({
         bookingRef: bookingsStatus.bookingRef,
         pickupDate: bookingsStatus.pickupDate,
+        vehicleIdentifier: bookingsStatus.vehicleIdentifier,
         selectedLocationId: bookingsStatus.selectedLocationId,
         locationId: locations.id,
         locationName: locations.name,
@@ -97,6 +99,17 @@ export async function POST(request: Request) {
         continue;
       }
 
+      if (!booking.vehicleIdentifier) {
+        console.warn(`Booking ${booking.bookingRef} has no vehicle identifier, skipping`);
+        skippedBookings.push({
+          bookingRef: booking.bookingRef,
+          status: "skipped",
+          success: false,
+          reason: "No vehicle identifier",
+        });
+        continue;
+      }
+
       if (!booking.pickupDate) {
         console.warn(`Booking ${booking.bookingRef} has no pickup date, skipping`);
         skippedBookings.push({
@@ -116,6 +129,7 @@ export async function POST(request: Request) {
       try {
         const { success, errorMessage } = await sendBookingLocation(
           booking.bookingRef,
+          booking.vehicleIdentifier!,
           booking.locationLatitude!,
           booking.locationLongitude!
         );
