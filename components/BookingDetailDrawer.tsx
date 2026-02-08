@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent
 } from "@/components/ui/sheet";
 import { useAssignDriver, useBookingDetail, useForceLocation, useSendLocation } from "@/hooks/use-bookings";
 import { useDrivers } from "@/hooks/use-drivers";
+import { useLocations } from "@/hooks/use-locations";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -33,6 +35,7 @@ interface BookingDetailDrawerProps {
 export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetailDrawerProps) {
   const { data, isLoading } = useBookingDetail(refId);
   const { data: driversData, isLoading: isLoadingDrivers } = useDrivers();
+  const { data: locationsData, isLoading: isLoadingLocations } = useLocations(1, 100);
   const assignDriver = useAssignDriver();
   const forceLocation = useForceLocation();
   const sendLocation = useSendLocation();
@@ -40,6 +43,9 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [isReassigning, setIsReassigning] = useState<boolean>(false);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<string>("");
+  const [longitude, setLongitude] = useState<string>("");
 
   const booking = data?.booking;
   const bookingStatus = data?.bookingStatus;
@@ -48,7 +54,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       type: "arrival" as const,
       fromLabel: "Recolha",
       from: booking.arrival.fromairport,
-      toLabel: "Entrega",
+      toLabel: "Destino",
       to: booking.arrival.accommodationname,
       date: booking.arrival.pickupdate || booking.arrival.arrivaldate || "",
       dateTitle: "Data e hora da recolha",
@@ -58,7 +64,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         type: "departure" as const,
         fromLabel: "Recolha",
         from: booking.departure.accommodationname,
-        toLabel: "Aeroporto",
+        toLabel: "Destino",
         to: booking.departure.toairport,
         date: booking.departure.pickupdate || booking.departure.departuredate || "",
         dateTitle: "Data e hora da recolha",
@@ -103,6 +109,20 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     }
     if (open) setIsReassigning(false);
   }, [open, bookingStatus?.driver]);
+
+  // Update latitude and longitude when location selection changes
+  useEffect(() => {
+    if (selectedLocation && selectedLocation !== "other" && locationsData?.data) {
+      const location = locationsData.data.find(loc => loc.id.toString() === selectedLocation);
+      if (location) {
+        setLatitude(location.latitude.toString());
+        setLongitude(location.longitude.toString());
+      }
+    } else if (selectedLocation === "other") {
+      setLatitude("");
+      setLongitude("");
+    }
+  }, [selectedLocation, locationsData]);
 
   const handleAssignDriver = () => {
     if (!refId || !selectedDriver) return;
@@ -189,10 +209,9 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         ) : (
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="relative h-40 bg-zinc-900 overflow-hidden">
+              <div className="relative h-40 bg-zinc-900">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent mix-blend-overlay" />
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80')] bg-cover bg-center opacity-10" />
-
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 to-transparent">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
@@ -209,63 +228,57 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
             </div>
 
             <div className="flex-1 p-6 space-y-8">
-              {/* Route Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Itinerário</h3>
-                {itinerary ? (
-                  <div className="bg-zinc-900/50 rounded-xl p-4 border border-white/5 space-y-6 relative overflow-hidden">
-                    <div className="absolute top-0 left-6 bottom-0 w-0.5 bg-zinc-800/50 border-r border-dashed border-zinc-700" />
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left: Itinerary */}
+                  <div>
+                    {itinerary ? (
+                    <div className="bg-zinc-900/50 rounded-xl p-4 border border-white/5 space-y-6 relative overflow-hidden">
+                      <div className="absolute top-0 left-6 bottom-0 w-0.5 bg-zinc-800/50 border-r border-dashed border-zinc-700" />
 
-                    <div className="relative z-10 flex gap-4">
-                      <div className="mt-1 h-3 w-3 rounded-full bg-primary ring-4 ring-zinc-900" />
-                      <div>
-                        <p className="text-xs text-zinc-500 mb-0.5">{itinerary.fromLabel}</p>
-                        <p className="font-medium text-zinc-200">{itinerary.from}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-primary">
-                          <Plane className="h-3 w-3" />
-                          <span>{itinerary.type === "arrival" ? "Chegada do voo" : "Partida do voo"}</span>
+                      <div className="relative z-10 flex gap-4">
+                        <div className="mt-1 h-3 w-3 rounded-full bg-primary ring-4 ring-zinc-900" />
+                        <div>
+                          <p className="text-xs text-zinc-500 mb-0.5">{itinerary.fromLabel}</p>
+                          <p className="font-medium text-zinc-200">{itinerary.from}</p>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 flex gap-4">
+                        <div className="mt-1 h-3 w-3 rounded-full bg-zinc-600 ring-4 ring-zinc-900" />
+                        <div>
+                          <p className="text-xs text-zinc-500 mb-0.5">{itinerary.toLabel}</p>
+                          <p className="font-medium text-zinc-200">{itinerary.to}</p>
                         </div>
                       </div>
                     </div>
+                  ) : (
+                    <div className="bg-zinc-900/40 rounded-xl p-4 border border-white/5 text-zinc-500">
+                      Não há dados de itinerário disponíveis para esta reserva.
+                    </div>
+                  )}
+                  </div>
 
-                    <div className="relative z-10 flex gap-4">
-                      <div className="mt-1 h-3 w-3 rounded-full bg-zinc-600 ring-4 ring-zinc-900" />
-                      <div>
-                        <p className="text-xs text-zinc-500 mb-0.5">{itinerary.toLabel}</p>
-                        <p className="font-medium text-zinc-200">{itinerary.to}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500">
-                          <Hotel className="h-3 w-3" />
-                          <span>{itinerary.type === "arrival" ? "Alojamento" : "Aeroporto"}</span>
-                        </div>
+                  {/* Right: Date & Passengers */}
+                  <div className="space-y-4">
+                    <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-xs font-medium">{itinerary?.dateTitle ?? "Date"}</span>
                       </div>
+                      <p className="font-semibold text-zinc-200">{formattedItineraryDate}</p>
+                    </div>
+
+                    <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                        <Users className="h-4 w-4" />
+                        <span className="text-xs font-medium">Passageiros</span>
+                      </div>
+                      <p className="font-semibold text-zinc-200">{booking?.general.adults} Adultos, {booking?.general.children} Crianças</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-zinc-900/40 rounded-xl p-4 border border-white/5 text-zinc-500">
-                    Não há dados de itinerário disponíveis para esta reserva.
-                  </div>
-                )}
-              </div>
-
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
-                  <div className="flex items-center gap-2 text-zinc-500 mb-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-xs font-medium">{itinerary?.dateTitle ?? "Date"}</span>
-                  </div>
-                  <p className="font-semibold text-zinc-200">
-                    {formattedItineraryDate}
-                  </p>
-                </div>
-                <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
-                  <div className="flex items-center gap-2 text-zinc-500 mb-2">
-                    <Users className="h-4 w-4" />
-                    <span className="text-xs font-medium">Passageiros</span>
-                  </div>
-                  <p className="font-semibold text-zinc-200">
-                    {booking?.general.adults} Adultos, {booking?.general.children} Crianças
-                  </p>
                 </div>
               </div>
 
@@ -354,12 +367,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
               {/* Tracking & Actions */}
               <div className="space-y-4 pt-4 border-t border-white/10">
-                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Acompanhamento e estado</h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Estado da local</span>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Acompanhamento e estado</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end">
                       <span className={cn("text-sm font-bold flex items-center gap-2",
                         locationAlreadySent ? "text-emerald-500" : "text-zinc-400"
                       )}>
@@ -369,44 +380,88 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         {locationAlreadySent ? "Enviado" : "Pendente"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-400">Auto</span>
-                      <Switch
-                        checked={bookingStatus?.autoSendLocation ?? false}
-                        onCheckedChange={handleForceLocation}
-                        disabled={forceLocation.isPending}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-zinc-500">Envio automático</span>
-                      <span className={cn("text-sm font-bold",
-                        bookingStatus?.autoSendLocation ? "text-emerald-500" : "text-zinc-400"
-                      )}>
-                        {bookingStatus?.autoSendLocation ? "Ativado" : "Desativado"}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Send Location Button */}
-                {canSendLocation && !locationAlreadySent && (
-                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold text-white">Pronto para enviar local</h4>
+                <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
+                  <div className="space-y-4">
+                    {/* Hotel Selection */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-zinc-400 mb-0 block">Selecionar localização</label>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={bookingStatus?.autoSendLocation ?? false}
+                            onCheckedChange={handleForceLocation}
+                            disabled={forceLocation.isPending}
+                          />
+                          <span className="text-xs text-zinc-400">Auto</span>
                         </div>
-                        <p className="text-xs text-zinc-400">
-                          O tempo de transferência é de 30 minutos. Envie a local para notificar o passageiro.
-                        </p>
                       </div>
+                      <Select value={selectedLocation || ""} onValueChange={setSelectedLocation}>
+                        <SelectTrigger className="w-full bg-zinc-900 border-zinc-700">
+                          <SelectValue placeholder="Escolha um hotel..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800">
+                          {isLoadingLocations ? (
+                            <SelectItem value="loading" disabled className="text-zinc-500">
+                              A carregar hotéis...
+                            </SelectItem>
+                          ) : locationsData?.data && locationsData.data.length > 0 ? (
+                            <>
+                              {locationsData.data.map(location => (
+                                <SelectItem 
+                                  key={location.id} 
+                                  value={location.id.toString()} 
+                                  className="focus:bg-zinc-800 focus:text-primary"
+                                >
+                                  {location.name}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="other" className="focus:bg-zinc-800 focus:text-primary">
+                                Outro
+                              </SelectItem>
+                            </>
+                          ) : (
+                            <SelectItem value="none" disabled className="text-zinc-500">
+                              Sem hotéis disponíveis
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Latitude and Longitude */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-zinc-500 mb-1 block">Latitude</label>
+                        <Input
+                          type="number"
+                          step="0.000001"
+                          value={latitude}
+                          onChange={(e) => setLatitude(e.target.value)}
+                          placeholder="0.000000"
+                          className="bg-zinc-800 border-zinc-700 text-zinc-200 text-xs h-8"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-500 mb-1 block">Longitude</label>
+                        <Input
+                          type="number"
+                          step="0.000001"
+                          value={longitude}
+                          onChange={(e) => setLongitude(e.target.value)}
+                          placeholder="0.000000"
+                          className="bg-zinc-800 border-zinc-700 text-zinc-200 text-xs h-8"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Send Location Button */}
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-700">
                       <Button
                         onClick={handleSendLocation}
-                        disabled={sendLocation.isPending}
+                        disabled={sendLocation.isPending || !refId || !latitude || !longitude}
                         className="bg-primary hover:bg-primary/90 font-semibold whitespace-nowrap"
                         size="sm"
                       >
@@ -424,7 +479,8 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                       </Button>
                     </div>
                   </div>
-                )}
+                </div>
+
               </div>
 
             </div>
