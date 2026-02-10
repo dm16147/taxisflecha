@@ -14,7 +14,7 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onClick, index, type }: BookingCardProps) {
   const isArrival = type === "arrivals";
-  const rawDate = isArrival ? (booking.arrivaldate || booking.departuredate) : (booking.departuredate || booking.arrivaldate);
+  const rawDate = isArrival ? booking.arrivaldate : booking.departuredate; 
 
   const parsedDate: Date | null = rawDate ? new Date(rawDate) : null;
   const isValidDate = parsedDate && !isNaN(parsedDate.getTime());

@@ -94,6 +94,7 @@ export const bookingListItemSchema = z.object({
   status: z.string(),
   arrivaldate: z.string(),
   departuredate: z.string(),
+  pickupdate: z.string(),
   passengername: z.string(),
   vehicle: z.string(),
   driver: z.object({

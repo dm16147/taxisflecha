@@ -59,9 +59,11 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [latitude, setLatitude] = useState<string>("");
   const [longitude, setLongitude] = useState<string>("");
+  const [autoLocationMode, setAutoLocationMode] = useState<boolean>(false);
 
   const booking = data?.booking;
   const bookingStatus = data?.bookingStatus;
+  const isAcancelled = booking?.general.status === "ACAN";
   const itinerary = booking?.arrival
     ? {
       type: "arrival" as const,
@@ -69,7 +71,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       from: booking.arrival.fromairport,
       toLabel: "Destino",
       to: booking.arrival.accommodationname,
-      date: booking.arrival.pickupdate || booking.arrival.arrivaldate || "",
+      date: booking.arrival.arrivaldate || "",
       dateTitle: "Data e hora da recolha",
     }
     : booking?.departure
@@ -79,7 +81,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         from: booking.departure.accommodationname,
         toLabel: "Destino",
         to: booking.departure.toairport,
-        date: booking.departure.pickupdate || booking.departure.departuredate || "",
+        date: booking.departure.pickupdate || "",
         dateTitle: "Data e hora da recolha",
       }
       : null;
@@ -126,6 +128,9 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       setSelectedLocationId(null);
     }
     if (open) setIsReassigning(false);
+    if(open && bookingStatus?.autoSendLocation===true)
+      {setAutoLocationMode(true);}
+      else {setAutoLocationMode(false);} 
   }, [open, bookingStatus?.driver, bookingStatus?.selectedLocation]);
 
   useEffect(() => {
@@ -214,6 +219,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
       onSuccess: () => {
         const allLocations = locationPages?.pages.flatMap(p => p.data) ?? [];
         const location = allLocations.find(l => l.id === locId);
+        
+        // Atualizar latitude e longitude com os dados do hotel selecionado
+        if (location) {
+          setLatitude(location.latitude.toString());
+          setLongitude(location.longitude.toString());
+        }
+        
         toast({
           title: "Local selecionada",
           description: `${location?.name} foi selecionada para esta reserva`,
@@ -260,27 +272,39 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
         ) : (
           <div className="flex flex-col h-full">
             {/* Header */}
-              <div className="relative h-40 bg-zinc-900">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent mix-blend-overlay" />
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80')] bg-cover bg-center opacity-10" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 to-transparent">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                    booking?.general.status === "CONFIRMED" ? "bg-emerald-500 text-emerald-950" : "bg-zinc-700 text-zinc-300"
-                  )}>
-                    {booking?.general.status}
-                  </span>
-                  <span className="text-zinc-400 text-xs font-mono">{booking?.general.ref}</span>
+            <div className="relative w-full min-h-56 sm:min-h-64 bg-gradient-to-br from-zinc-900 to-zinc-950 overflow-hidden flex flex-col justify-end">
+              {/* Background Image */}
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80')] bg-cover bg-center opacity-30" />
+              
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/25 to-transparent mix-blend-overlay" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+              
+              {/* Content */}
+              <div className="relative z-10 p-4 sm:p-6 pb-6">
+                <div className="space-y-3">
+                  {/* Status Badge and Ref */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={cn("px-3 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap",
+                      booking?.general.status === "CONFIRMED" ? "bg-emerald-500 text-emerald-950" : "bg-amber-500/80 text-amber-950"
+                    )}>
+                      {booking?.general.status}
+                    </span>
+                    <span className="text-zinc-300 text-sm font-mono bg-zinc-800/50 px-2 py-1 rounded">{booking?.general.ref}</span>
+                  </div>
+                  
+                  {/* Passenger Name */}
+                  <h2 className="text-xl sm:text-2xl font-display font-bold text-white shadow-sm leading-snug break-words">
+                    {booking?.general.passengername}
+                  </h2>
                 </div>
-                <h2 className="text-2xl font-display font-bold text-white shadow-sm">
-                  {booking?.general.passengername}
-                </h2>
               </div>
             </div>
 
-            <div className="flex-1 p-6 space-y-8">
+            <div className="flex-1 p-6 space-y-6">
+              {/* Section 1: Booking Info */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Itinerário</h3>
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Informações da Reserva</h3>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Left: Itinerary */}
@@ -317,7 +341,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                     <div className="bg-zinc-900/30 p-4 rounded-xl border border-white/5">
                       <div className="flex items-center gap-2 text-zinc-500 mb-2">
                         <Calendar className="h-4 w-4" />
-                        <span className="text-xs font-medium">{itinerary?.dateTitle ?? "Date"}</span>
+                        <span className="text-xs font-medium">{itinerary?.dateTitle ?? "Data"}</span>
                       </div>
                       <p className="font-semibold text-zinc-200">{formattedItineraryDate}</p>
                     </div>
@@ -333,10 +357,11 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 </div>
               </div>
 
-              {/* Assignment Section */}
+              {/* Section 2: Driver Assignment */}
+              {!isAcancelled && (
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Atribuição de motorista</h3>
+                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Atribuição de Motorista</h3>
                   {bookingStatus?.driver ? (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -415,11 +440,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Tracking & Actions */}
+              {/* Section 3: Location & Tracking */}
+              {!isAcancelled && (
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Acompanhamento e estado</h3>
+                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Localização e Acompanhamento</h3>
                   <div className="flex items-center gap-3">
                     <div className="flex flex-col items-end">
                       <span className={cn("text-sm font-bold flex items-center gap-2",
@@ -436,21 +463,61 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
 
                 {/* Location Selection */}
                 <div className="bg-card rounded-xl p-5 border border-white/5">
-                  <label className="text-sm text-zinc-400 mb-2 block">Selecionar local para emissão</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-sm text-zinc-400 font-medium">Selecionar Localização</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500">Auto</span>
+                      <Switch 
+                        checked={autoLocationMode} 
+                        onCheckedChange={(checked) => {
+                          if (!refId || !selectedLocationId) {
+                            toast({
+                              title: "Ação inválida",
+                              description: "Por favor, selecione uma localização antes de ativar o modo automático.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setAutoLocationMode(checked);
+                          forceLocation.mutate(
+                            { bookingRef: refId},
+                            {
+                              onSuccess: () => {
+                                toast({
+                                  title: checked ? "Modo automático ativado" : "Modo automático desativado",
+                                  description: `Envio automático de localização ${checked ? "ativado" : "desativado"} para a localização selecionada.`,
+                                });
+                              },
+                              onError: (err: Error) => {
+                                setAutoLocationMode(!checked);
+                                toast({
+                                  title: "Erro",
+                                  description: err.message,
+                                  variant: "destructive",
+                                });
+                              },
+                            }
+                          );
+                        }}
+                        disabled={forceLocation.isPending || !selectedLocationId}
+                      />
+                    </div>
+                  </div>
+                  
                   <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full justify-between bg-zinc-900 border-zinc-700 text-zinc-200"
+                        className="w-full justify-between bg-zinc-900 border-zinc-700 text-zinc-200 mb-3"
                         disabled={selectLocation.isPending}
                       >
-                        {bookingStatus?.selectedLocation?.name || "Escolha uma local..."}
+                        {bookingStatus?.selectedLocation?.name || "Escolha uma localização..."}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-full min-w-[280px] bg-zinc-900 border-zinc-800">
                       <Command>
                         <CommandInput
-                          placeholder="Pesquisar local..."
+                          placeholder="Pesquisar localização..."
                           value={locationQuery}
                           onValueChange={setLocationQuery}
                         />
@@ -482,17 +549,13 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  
                   {isLoadingLocations && (
-                    <p className="text-xs text-zinc-500 mt-2">A carregar locais...</p>
-                  )}
-                  {selectedLocationId && bookingStatus?.selectedLocation && (
-                    <p className="text-xs text-zinc-500 mt-2">
-                      Local selecionada: <span className="text-primary font-medium">{bookingStatus.selectedLocation.name}</span>
-                    </p>
+                    <p className="text-xs text-zinc-500">A carregar localizações...</p>
                   )}
                 </div>
 
-                {/* Send Location Button - Only when within 30min window and not sent yet */}
+                {/* Send Location Button */}
                 <div className={cn(
                   "rounded-xl p-5 border transition-all",
                   canSendLocation && !locationAlreadySent && selectedLocationId
@@ -505,22 +568,22 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                         <MapPin className={cn("h-4 w-4", canSendLocation && !locationAlreadySent && selectedLocationId ? "text-primary" : "text-zinc-600")} />
                         <h4 className={cn("text-sm font-semibold", canSendLocation && !locationAlreadySent && selectedLocationId ? "text-white" : "text-zinc-500")}>
                           {locationAlreadySent
-                            ? "Local já foi enviada"
+                            ? "Localização já foi enviada"
                             : canSendLocation && selectedLocationId
-                              ? "Pronto para enviar local"
+                              ? "Pronto para enviar localização"
                               : !selectedLocationId
-                                ? "Selecione uma local primeiro"
+                                ? "Selecione uma localização primeiro"
                                 : "Fora da janela de envio"}
                         </h4>
                       </div>
                       <p className="text-xs text-zinc-400">
                         {locationAlreadySent
-                          ? "A local desta reserva já foi enviada para o sistema externo."
+                          ? "A localização desta reserva já foi enviada para o sistema externo."
                           : canSendLocation && selectedLocationId
-                            ? "O tempo de transferência é de 30 minutos. Envie a local para notificar o sistema externo."
+                            ? "Janela de transferência: 30 minutos. Envie a localização para notificar o sistema."
                             : !selectedLocationId
-                              ? "Escolha uma local da lista acima para poder enviar."
-                              : "O envio manual está disponível apenas dentro da janela de 30 minutos antes do horário de recolha."}
+                              ? "Escolha uma localização para continuar."
+                              : "O envio está disponível apenas 30 minutos antes do horário de recolha."}
                       </p>
                     </div>
                     <Button
@@ -537,13 +600,14 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                       ) : (
                         <>
                           <Send className="h-3 w-3 mr-1.5" />
-                          Enviar local
+                          Enviar Localização
                         </>
                       )}
                     </Button>
                   </div>
                 </div>
               </div>
+              )}
 
             </div>
           </div>
