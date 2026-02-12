@@ -12,7 +12,7 @@ function formatDateForApi(date: string): string {
     return `${date}T00:00:00`;
 }
 
-function generateVehicleIdentifier(length: number = 40): string {
+function generateVehicleIdentifier(length: number = 32): string {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
     const bytes = randomBytes(length);
     let result = "";
@@ -27,6 +27,10 @@ async function updatePickupDatesAsync(
     bookings: Record<string, any>
 ) {
     try {
+        const isArrival = type === "arrivals";
+        const getPrimaryDate = (booking: any) =>
+            isArrival ? booking.arrivaldate : booking.departuredate;
+
         const bookingRefs = Object.values(bookings)
             .map((booking: any) => booking?.ref)
             .filter(Boolean);
@@ -78,28 +82,23 @@ async function updatePickupDatesAsync(
                 continue;
             }
 
-            if (type === "arrivals") {
-                const arrivalDateStr = booking.arrivaldate;
-                if (!arrivalDateStr) continue;
+            const primaryDateStr = getPrimaryDate(booking);
+            if (!primaryDateStr) continue;
 
-                const arrivalDate = new Date(arrivalDateStr);
+            const primaryDate = new Date(primaryDateStr);
 
+            if (isArrival) {
                 // Update if dates differ or booking changed
                 if (!existing?.pickupDate ||
-                    existing.pickupDate.getTime() !== arrivalDate.getTime()) {
-                    directUpdates.push({ ref, newDate: arrivalDate, lastActionDate: newLastActionDate, status: newStatus });
+                    existing.pickupDate.getTime() !== primaryDate.getTime()) {
+                    directUpdates.push({ ref, newDate: primaryDate, lastActionDate: newLastActionDate, status: newStatus });
                 } else {
                     statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 }
-            } else if (type === "departures") {
-                const departureDateStr = booking.departuredate;
-                if (!departureDateStr) continue;
-
-                const departureDate = new Date(departureDateStr);
-
+            } else {
                 // Fetch detail if dates differ or booking changed
                 if (!existing?.pickupDate ||
-                    existing.pickupDate.getTime() !== departureDate.getTime()) {
+                    existing.pickupDate.getTime() !== primaryDate.getTime()) {
                     detailFetchesNeeded.push({ ref, lastActionDate: newLastActionDate, status: newStatus });
                 } else {
                     statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
@@ -134,7 +133,10 @@ async function updatePickupDatesAsync(
             const detailPromises = detailFetchesNeeded.map(async ({ ref, lastActionDate, status }) => {
                 try {
                     const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`;
-                    const response = await fetch(url, { headers: headers() });
+                    const response = await fetch(url, {
+                        headers: headers(),
+                        cache: "no-store"
+                    });
 
                     if (!response.ok) {
                         console.error(`Failed to fetch detail for ${ref}, response: ${JSON.stringify(response)}`);
@@ -181,15 +183,14 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         const url = `${process.env.VITE_BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
         const externalApiUrl = new URL(url);
 
-        const init = {
+        const response = await fetch(externalApiUrl, {
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "API_KEY": process.env.VITE_BASE_API_KEY!
-            }
-        };
-
-        const response = await fetch(externalApiUrl, init)
+            },
+            cache: "no-store"
+        })
 
         if (response.status === 204) {
             return NextResponse.json({ bookings: {}, warnings: [] });
@@ -228,9 +229,12 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
                 .onConflictDoNothing({ target: bookingsStatus.bookingRef });
         }
 
-        // Batch fetch driver assignments for all booking refs
+        // Synchronously update pickup dates before returning
         const bookingRefs = values.map((v) => v.bookingRef);
-        let driverAssignments: Record<string, { id: number; name: string }> = {};
+        await updatePickupDatesAsync(type, data.bookings ?? {});
+
+        // Batch fetch driver assignments and pickup dates for all booking refs
+        let driverAssignments: Record<string, { id: number; name: string; pickupDate: Date | null }> = {};
 
         if (bookingRefs.length > 0) {
             const assignments = await db
@@ -238,6 +242,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
                     bookingRef: bookingsStatus.bookingRef,
                     driverId: bookingsStatus.driverId,
                     driverName: drivers.name,
+                    pickupDate: bookingsStatus.pickupDate,
                 })
                 .from(bookingsStatus)
                 .leftJoin(drivers, eq(bookingsStatus.driverId, drivers.id))
@@ -245,29 +250,25 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
 
             // Create a lookup map for quick access
             driverAssignments = assignments.reduce((acc, item) => {
-                if (item.driverId && item.driverName) {
-                    acc[item.bookingRef] = {
-                        id: item.driverId,
-                        name: item.driverName,
-                    };
-                }
+                acc[item.bookingRef] = {
+                    id: item.driverId ?? 0,
+                    name: item.driverName ?? "",
+                    pickupDate: item.pickupDate ?? null,
+                };
                 return acc;
-            }, {} as Record<string, { id: number; name: string }>);
+            }, {} as Record<string, { id: number; name: string; pickupDate: Date | null }>);
         }
 
-        // Merge driver info into booking data
+        // Merge driver info and pickup date into booking data
         const enrichedBookings = Object.entries(data.bookings ?? {}).reduce((acc, [key, booking]: [string, any]) => {
+            const assignment = driverAssignments[booking.ref];
             acc[key] = {
                 ...booking,
-                driver: driverAssignments[booking.ref] || undefined,
+                driver: assignment?.id ? { id: assignment.id, name: assignment.name } : undefined,
+                pickupDate: assignment?.pickupDate ?? null,
             };
             return acc;
         }, {} as Record<string, any>);
-
-        // Async update pickup dates (fire-and-forget)
-        updatePickupDatesAsync(type, data.bookings ?? {}).catch(err =>
-            console.error("Background pickup date update failed:", err)
-        );
 
         return NextResponse.json({ ...data, bookings: enrichedBookings });
     } catch (error) {

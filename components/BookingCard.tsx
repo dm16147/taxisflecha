@@ -14,7 +14,7 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onClick, index, type }: BookingCardProps) {
   const isArrival = type === "arrivals";
-  const rawDate = isArrival ? booking.arrivaldate : booking.departuredate; 
+  const rawDate = booking.pickupDate;
 
   const parsedDate: Date | null = rawDate ? new Date(rawDate) : null;
   const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
@@ -99,7 +99,7 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium text-zinc-200 line-clamp-1">{booking.passengername}</span>
         </div>
-        
+
         {/* Driver Assignment Status */}
         {booking.driver ? (
           <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -112,7 +112,7 @@ export function BookingCard({ booking, onClick, index, type }: BookingCardProps)
             <span className="text-xs font-medium text-amber-500">Sem motorista</span>
           </div>
         )}
-        
+
         <div className="flex items-center gap-3">
           <Hash className="h-4 w-4 text-muted-foreground" />
           <span className="font-mono text-sm text-zinc-400">{booking.ref}</span>

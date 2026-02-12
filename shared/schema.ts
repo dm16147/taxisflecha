@@ -97,6 +97,7 @@ export const bookingListItemSchema = z.object({
   pickupdate: z.string(),
   passengername: z.string(),
   vehicle: z.string(),
+  pickupDate: z.string().nullable().optional(), // Pickup date from our database
   driver: z.object({
     id: z.number(),
     name: z.string(),
