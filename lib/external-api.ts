@@ -20,6 +20,9 @@ export async function sendBookingLocation(
   longitude: number
 ): Promise<{ success: boolean; errorMessage?: string }> {
   try {
+    const now=new Date();
+    now.setTime(now.getTime()-5000); 
+  
     const payload: ExternalLocationPayload = {
       timestamp: formatTimestamp(new Date()),
       location: {
@@ -40,7 +43,7 @@ export async function sendBookingLocation(
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
+    if (response.status!=200) {
       const errorText = await response.text();
       console.error(`External API error for ${bookingRef}:`, response.status, errorText);
       return {

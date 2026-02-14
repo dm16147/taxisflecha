@@ -69,7 +69,7 @@ export async function POST(
                     contactMethods,
                 },
             }),
-        });
+        }); 
 
         if (!response.ok) {
             const errorText = await response.text();
