@@ -68,7 +68,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     ? {
       type: "arrival" as const,
       fromLabel: "Recolha",
-      from: booking.arrival.fromairport,
+      from: booking.general.airport,
       toLabel: "Destino",
       to: booking.arrival.accommodationname,
       date: booking.arrival.arrivaldate || "",
