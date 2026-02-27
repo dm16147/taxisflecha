@@ -206,6 +206,7 @@ export function useSelectLocation() {
 
 export function useForceLocation() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ bookingRef }: { bookingRef: string }) => {
@@ -217,11 +218,27 @@ export function useForceLocation() {
         throw await buildRequestError(response, "Falha ao alternar o envio automático da local", "useForceLocation");
       }
 
-      return response.json();
+      const data = await response.json();
+      
+      // Verify we got a valid response
+      if (typeof data.autoSendLocation !== 'boolean') {
+        console.error("Invalid response from force-location endpoint", data);
+        throw new Error("Resposta inválida do servidor");
+      }
+
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["booking", variables.bookingRef] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+    onError: (error: Error) => {
+      console.error("useForceLocation mutation failed:", error);
+      toast({
+        title: "Erro ao alternar modo automático",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }
