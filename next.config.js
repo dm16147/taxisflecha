@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     env: {
-        VITE_BASE_API_KEY: process.env.VITE_BASE_API_KEY,
-        VITE_BASE_API_URL: process.env.VITE_BASE_API_URL,
+        BASE_API_KEY: process.env.BASE_API_KEY,
+        BASE_API_URL: process.env.BASE_API_URL,
     }
 };
 

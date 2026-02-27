@@ -26,15 +26,18 @@ async function buildRequestError(
   return new Error(finalMessage);
 }
 
-export function useBookings(type: BookingType, dateFrom?: string, dateTo?: string) {
+export const PAGE_SIZE = 20;
+
+export function useBookings(type: BookingType, dateFrom?: string, dateTo?: string, page: number = 1) {
   const { toast } = useToast();
   
-  return useQuery<BookingsListResponse>({
-    queryKey: ["bookings", type, dateFrom, dateTo],
+  return useQuery<BookingsListResponse & { hasMore: boolean }>({
+    queryKey: ["bookings", type, dateFrom, dateTo, page],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (dateFrom) params.set("dateFrom", dateFrom);
       if (dateTo) params.set("dateTo", dateTo);
+      if (page > 1) params.set("page", page.toString());
 
       const query = params.toString();
       const response = await fetch(`/api/bookings/${type}${query ? `?${query}` : ""}`);
@@ -61,7 +64,13 @@ export function useBookings(type: BookingType, dateFrom?: string, dateTo?: strin
         throw await buildRequestError(response, "Falha ao obter reservas", "useBookings");
       }
 
-      return response.json();
+      const data: BookingsListResponse = await response.json();
+      const bookingsCount = Object.keys(data.bookings || {}).length;
+      
+      return {
+        ...data,
+        hasMore: bookingsCount >= PAGE_SIZE,
+      };
     },
   });
 }

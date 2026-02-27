@@ -3,25 +3,25 @@
 import { BookingDetailDrawer } from "@/components/BookingDetailDrawer";
 import { Header } from "@/components/Header";
 import BookingList from "@/components/pages/BookingList";
-import DashboardControlsMobile from "@/components/pages/DashboardControlsMobile";
 import DashboardControlsDesktop from "@/components/pages/DashboardControlsDesktop";
+import DashboardControlsMobile from "@/components/pages/DashboardControlsMobile";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBookings } from "@/hooks/use-bookings";
 import { useAuth } from "@/hooks/use-auth";
+import { useBookings } from "@/hooks/use-bookings";
 import type { BookingListItem, BookingType } from "@/shared/schema";
 import { endOfWeek, format, startOfWeek } from "date-fns";
-import { Calendar as CalendarIcon, LogIn } from "lucide-react";
-import { useState } from "react";
-import { BookingCard } from "../BookingCard";
 import { pt } from "date-fns/locale/pt";
+import { Calendar as CalendarIcon, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Dashboard() {
   const [selectedBookingRef, setSelectedBookingRef] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<BookingType>("departures");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Date range state
   const initialStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -33,7 +33,23 @@ export default function Dashboard() {
   const [dateToOpen, setDateToOpen] = useState(false);
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo);
+  const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo, currentPage);
+
+  // Reset page when filters change
+  const handleDateFromChange = (value: string) => {
+    setDateFrom(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateToChange = (value: string) => {
+    setDateTo(value);
+    setCurrentPage(1);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as BookingType);
+    setCurrentPage(1);
+  };
 
   const handleBookingClick = (ref: string) => {
     setSelectedBookingRef(ref);
@@ -61,8 +77,8 @@ export default function Dashboard() {
             <DashboardControlsMobile
               dateFrom={dateFrom}
               dateTo={dateTo}
-              setDateFrom={setDateFrom}
-              setDateTo={setDateTo}
+              setDateFrom={handleDateFromChange}
+              setDateTo={handleDateToChange}
               dateFromOpen={dateFromOpen}
               setDateFromOpen={setDateFromOpen}
               dateToOpen={dateToOpen}
@@ -75,8 +91,8 @@ export default function Dashboard() {
             <DashboardControlsDesktop
               dateFrom={dateFrom}
               dateTo={dateTo}
-              setDateFrom={setDateFrom}
-              setDateTo={setDateTo}
+              setDateFrom={handleDateFromChange}
+              setDateTo={handleDateToChange}
               dateFromOpen={dateFromOpen}
               setDateFromOpen={setDateFromOpen}
               dateToOpen={dateToOpen}
@@ -85,7 +101,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="departures" value={activeTab} onValueChange={(value) => setActiveTab(value as BookingType)} className="space-y-6">
+        <Tabs defaultValue="departures" value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="bg-zinc-900/50 border border-white/5 p-1 h-auto rounded-xl">
             <TabsTrigger
               value="departures"
@@ -131,14 +147,22 @@ export default function Dashboard() {
                   Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
                 </div>
               )
-            ) : bookingList.length === 0 ? (
+            ) : bookingList.length === 0 && currentPage === 1 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-zinc-300">Não foram encontradas partidas</h3>
                 <p className="text-zinc-500">Não há reservas agendadas para este intervalo de datas.</p>
               </div>
             ) : (
-              <BookingList bookingList={bookingList} type={activeTab} onBookingClick={handleBookingClick} />
+              <BookingList 
+                bookingList={bookingList} 
+                type={activeTab} 
+                onBookingClick={handleBookingClick}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                hasMore={data?.hasMore ?? false}
+                isLoading={isLoading}
+              />
             )}
           </TabsContent>
 
@@ -172,24 +196,22 @@ export default function Dashboard() {
                   Falha ao carregar as reservas. Por favor, tente novamente mais tarde.
                 </div>
               )
-            ) : bookingList.length === 0 ? (
+            ) : bookingList.length === 0 && currentPage === 1 ? (
               <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
                 <CalendarIcon className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-zinc-300">Nenhuma chegada encontrada</h3>
                 <p className="text-zinc-500">Não há reservas agendadas para este intervalo de datas.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {bookingList.map((booking, index) => (
-                  <BookingCard
-                    key={booking.ref}
-                    booking={booking}
-                    index={index}
-                    type={activeTab}
-                    onClick={() => handleBookingClick(booking.ref)}
-                  />
-                ))}
-              </div>
+              <BookingList 
+                bookingList={bookingList} 
+                type={activeTab} 
+                onBookingClick={handleBookingClick}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                hasMore={data?.hasMore ?? false}
+                isLoading={isLoading}
+              />
             )}
           </TabsContent>
         </Tabs>

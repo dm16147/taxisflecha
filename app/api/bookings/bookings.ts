@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
-import { BookingType, bookingsStatus, drivers } from "@/shared/schema";
-import { NextResponse } from "next/server";
-import { inArray, eq } from "drizzle-orm";
 import { headers } from "@/lib/utils";
+import { BookingType, bookingsStatus, drivers } from "@/shared/schema";
 import { randomBytes } from "crypto";
+import { eq, inArray } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 function formatDateForApi(date: string): string {
     if (date.includes('T')) {
@@ -132,7 +132,7 @@ async function updatePickupDatesAsync(
         if (detailFetchesNeeded.length > 0) {
             const detailPromises = detailFetchesNeeded.map(async ({ ref, lastActionDate, status }) => {
                 try {
-                    const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`;
+                    const url = `${process.env.BASE_API_URL}/bookings/${ref}`;
                     const response = await fetch(url, {
                         headers: headers(),
                         cache: "no-store"
@@ -180,14 +180,14 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         const formattedDateTo = formatDateForApi(dateTo!)
         const pageNum = pageNumber ?? 1;
 
-        const url = `${process.env.VITE_BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
+        const url = `${process.env.BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
         const externalApiUrl = new URL(url);
 
         const response = await fetch(externalApiUrl, {
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "API_KEY": process.env.VITE_BASE_API_KEY!
+                "API_KEY": process.env.BASE_API_KEY!
             },
             cache: "no-store"
         })

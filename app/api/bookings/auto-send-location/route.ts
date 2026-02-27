@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingsStatus, cronLogs, locationLogs, locations } from "@/shared/schema";
-import { eq, and, lte, gte, inArray } from "drizzle-orm";
 import { sendBookingLocation } from "@/lib/external-api";
+import { bookingsStatus, cronLogs, locationLogs, locations } from "@/shared/schema";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 
 type BookingToSend = {

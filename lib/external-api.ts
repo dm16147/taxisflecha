@@ -32,7 +32,7 @@ export async function sendBookingLocation(
       status: "BEFORE_PICKUP",
     };
 
-    const url = `${process.env.VITE_BASE_API_URL}/bookings/${bookingRef}/vehicles/${vehicleIdentifier}/location`;
+    const url = `${process.env.BASE_API_URL}/bookings/${bookingRef}/vehicles/${vehicleIdentifier}/location`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -42,6 +42,8 @@ export async function sendBookingLocation(
       },
       body: JSON.stringify(payload),
     });
+    console.log(JSON.stringify(response))
+    console.log(`TESTING : ${response.status}; ${response.statusText}`)
 
     if (response.status!=200) {
       const errorText = await response.text();
@@ -54,6 +56,7 @@ export async function sendBookingLocation(
 
     return { success: true };
   } catch (error) {
+    console.log("I AM HERE")
     console.error(`Exception calling external API for ${bookingRef}:`, error);
     return {
       success: false,
