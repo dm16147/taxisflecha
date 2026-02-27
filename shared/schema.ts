@@ -53,6 +53,21 @@ export const cronLogs = pgTable("cron_logs", {
   finishedAt: timestamp("finished_at", { withTimezone: true }),
 });
 
+// Temporary debug logging table
+export const debugLogs = pgTable("debug_logs", {
+  id: serial("id").primaryKey(),
+  action: varchar("action", { length: 64 }).notNull(),
+  bookingRef: varchar("booking_ref", { length: 64 }),
+  requestId: varchar("request_id", { length: 64 }),
+  userIdentifier: varchar("user_identifier", { length: 64 }), // Masked email for privacy
+  previousValue: varchar("previous_value", { length: 255 }),
+  newValue: varchar("new_value", { length: 255 }),
+  success: boolean("success").notNull(),
+  errorMessage: varchar("error_message", { length: 512 }),
+  metadata: text("metadata"), // JSON string for additional context
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 export const contactTypes = pgTable("contact_types", {
   id: serial("id").primaryKey(),
   description: varchar("description", { length: 64 }).notNull().unique(),

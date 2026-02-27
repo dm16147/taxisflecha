@@ -136,7 +136,7 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
     if (open) setIsReassigning(false);
     if (open && bookingStatus?.autoSendLocation === true) { setAutoLocationMode(true); }
     else { setAutoLocationMode(false); }
-  }, [open, bookingStatus?.driver, bookingStatus?.selectedLocation]);
+  }, [open, bookingStatus?.driver, bookingStatus?.selectedLocation, bookingStatus?.autoSendLocation]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -464,18 +464,24 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                               });
                               return;
                             }
+                            // Store the previous value for rollback
+                            const previousValue = autoLocationMode;
+                            // Optimistic update
                             setAutoLocationMode(checked);
                             forceLocation.mutate(
                               { bookingRef: refId },
                               {
-                                onSuccess: () => {
+                                onSuccess: (data) => {
+                                  // Use the server's actual value to ensure consistency
+                                  setAutoLocationMode(data.autoSendLocation);
                                   toast({
-                                    title: checked ? "Modo automático ativado" : "Modo automático desativado",
-                                    description: `Envio automático de localização ${checked ? "ativado" : "desativado"} para a localização selecionada.`,
+                                    title: data.autoSendLocation ? "Modo automático ativado" : "Modo automático desativado",
+                                    description: `Envio automático de localização ${data.autoSendLocation ? "ativado" : "desativado"} para a localização selecionada.`,
                                   });
                                 },
                                 onError: (err: Error) => {
-                                  setAutoLocationMode(!checked);
+                                  // Revert to previous value on error
+                                  setAutoLocationMode(previousValue);
                                   toast({
                                     title: "Erro",
                                     description: err.message,
