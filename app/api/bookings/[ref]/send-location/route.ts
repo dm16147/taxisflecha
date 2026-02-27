@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sendBookingLocation } from "@/lib/external-api";
 import { bookingsStatus, locationLogs, locations } from "@/shared/schema";
 import { eq } from "drizzle-orm";
-import { sendBookingLocation } from "@/lib/external-api";
+import { NextResponse } from "next/server";
 
 
 export async function POST(

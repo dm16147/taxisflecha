@@ -9,7 +9,7 @@ export function headers(): Record<string, string> {
   return {
     "Accept": "application/json",
     "Content-Type": "application/json",
-    "API_KEY": process.env.VITE_BASE_API_KEY!,
+    "API_KEY": process.env.BASE_API_KEY!,
     "VERSION": "2025-01"
   }
 }

@@ -12,7 +12,7 @@ export async function GET(
     try {
         const { ref } = await params;
 
-        const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}`
+        const url = `${process.env.BASE_API_URL}/bookings/${ref}`
 
         const response = await fetch(url, {
             headers: headers(),

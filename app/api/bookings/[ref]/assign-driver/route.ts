@@ -55,7 +55,7 @@ export async function POST(
         }
 
         // Call external API to assign driver
-        const url = `${process.env.VITE_BASE_API_URL}/bookings/${ref}/vehicles/${existingStatus.vehicleIdentifier}`;
+        const url = `${process.env.BASE_API_URL}/bookings/${ref}/vehicles/${existingStatus.vehicleIdentifier}`;
         const response = await fetch(url, {
             method: "PUT",
             headers: {
