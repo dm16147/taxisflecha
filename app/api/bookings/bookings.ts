@@ -67,12 +67,16 @@ async function updatePickupDatesAsync(
             const newLastActionDate = booking.lastactiondate ? new Date(booking.lastactiondate) : null;
             const newStatus = booking.status;
 
+            // Check if there's a change in lastActionDate or status
             const hasChange = !existing?.lastActionDate || !newLastActionDate
                 ? true
                 : existing.lastActionDate.getTime() !== newLastActionDate.getTime() || existing.status !== newStatus;
 
-            // Skip if no change detected via lastActionDate
-            if (!hasChange) {
+            // Also need to process if pickupDate is missing (for new records)
+            const needsPickupDate = !existing?.pickupDate;
+
+            // Skip only if no change AND pickup date is already set
+            if (!hasChange && !needsPickupDate) {
                 continue;
             }
 
