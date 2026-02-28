@@ -121,7 +121,8 @@ export const bookingListItemSchema = z.object({
 
 // The API returns an object of objects for the list
 export const bookingsListResponseSchema = z.object({
-  bookings: z.record(z.string(), bookingListItemSchema)
+  bookings: z.record(z.string(), bookingListItemSchema),
+  more: z.string().optional(), // Present when there are more results to fetch
 });
 
 // Detail View Item

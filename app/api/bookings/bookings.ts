@@ -9,7 +9,7 @@ function formatDateForApi(date: string): string {
     if (date.includes('T')) {
         date = date.split('T')[0];
     }
-    return `${date}T00:00:00`;
+    return `${date}T23:59:59`;
 }
 
 function generateVehicleIdentifier(length: number = 32): string {
