@@ -26,8 +26,6 @@ async function buildRequestError(
   return new Error(finalMessage);
 }
 
-export const PAGE_SIZE = 20;
-
 export function useBookings(type: BookingType, dateFrom?: string, dateTo?: string, page: number = 1) {
   const { toast } = useToast();
   
@@ -65,11 +63,11 @@ export function useBookings(type: BookingType, dateFrom?: string, dateTo?: strin
       }
 
       const data: BookingsListResponse = await response.json();
-      const bookingsCount = Object.keys(data.bookings || {}).length;
       
       return {
         ...data,
-        hasMore: bookingsCount >= PAGE_SIZE,
+        // External API returns "more" field (string) when there are more results
+        hasMore: !!data.more,
       };
     },
   });
