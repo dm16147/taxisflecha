@@ -34,6 +34,30 @@ interface BookingDetailDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const getStatusColor = (status: string) => {
+  switch (status.toUpperCase()) {
+    case "PCON": return "bg-zinc-500/10 text-white border-zinc-500/20";
+    case "ACON": return "bg-green-500/10 text-white border-green-500/20";
+    case "PAMM": return "bg-orange-500/10 text-white border-orange-500/20";
+    case "AAMM": return "bg-green-500/10 text-white border-green-500/20";
+    case "PCAN": return "bg-orange-500/10 text-white border-red-500/20";
+    case "ACAN": return "bg-red-500/10 text-red-500 border-red-500/20";
+    default: return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
+  }
+};
+
+const getStatusValue = (status: string) => {
+  switch (status.toUpperCase()) {
+    case "PCON": return "Pendente";
+    case "ACON": return "Aceite";
+    case "PAMM": return "Em alt.";
+    case "AAMM": return "Alterado";
+    case "PCAN": return "Em anul.";
+    case "ACAN": return "Anulado";
+    default: return status;
+  }
+};
+
 export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetailDrawerProps) {
   const { data, isLoading } = useBookingDetail(refId);
   const { data: driversData, isLoading: isLoadingDrivers } = useDrivers();
@@ -271,10 +295,10 @@ export function BookingDetailDrawer({ refId, open, onOpenChange }: BookingDetail
                 <div className="space-y-3">
                   {/* Status Badge and Ref */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={cn("px-3 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap",
-                      booking?.general.status === "CONFIRMED" ? "bg-emerald-500 text-emerald-950" : "bg-amber-500/80 text-amber-950"
+                    <span className={cn("px-3 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap border",
+                      getStatusColor(booking?.general.status ?? "")
                     )}>
-                      {booking?.general.status}
+                      {getStatusValue(booking?.general.status ?? "")}
                     </span>
                     <span className="text-zinc-300 text-sm font-mono bg-zinc-800/50 px-2 py-1 rounded">{booking?.general.ref}</span>
                   </div>
