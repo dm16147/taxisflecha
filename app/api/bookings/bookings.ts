@@ -5,11 +5,19 @@ import { randomBytes } from "crypto";
 import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-function formatDateForApi(date: string): string {
+function formatToDate(date: string): string {
     if (date.includes('T')) {
         date = date.split('T')[0];
     }
     return `${date}T23:59:59`;
+}
+
+function formatFromDate(date:string): string {
+    if (date.includes('T')) {
+        date = date.split('T')[0];
+    }
+    return `${date}T00:00:00`;
+
 }
 
 function generateVehicleIdentifier(length: number = 32): string {
@@ -180,8 +188,8 @@ async function updatePickupDatesAsync(
 
 export async function retrieveBookings(type: BookingType, dateFrom: string | null, dateTo: string | null, pageNumber: string | null) {
     try {
-        const formattedDateFrom = formatDateForApi(dateFrom!)
-        const formattedDateTo = formatDateForApi(dateTo!)
+        const formattedDateFrom = formatFromDate(dateFrom!)
+        const formattedDateTo = formatToDate(dateTo!)
         const pageNum = pageNumber ?? 1;
 
         const url = `${process.env.BASE_API_URL}/bookings/search/${type}/since/${formattedDateFrom}/until/${formattedDateTo}/page/${pageNum}`;
