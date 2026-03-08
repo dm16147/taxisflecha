@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       startedAt: now,
     }).returning({ id: cronLogs.id });
     cronLogId = cronLog[0]?.id;
-    const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+    const thirtyMinutesFromNow = new Date(now.getTime() + 20 * 60 * 1000);
 
     // Fetch all bookings with autoSendLocation = true, locationSent = false,
     // and pickupDate within the next 30 minutes
