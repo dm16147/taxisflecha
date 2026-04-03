@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { headers } from "@/lib/utils";
+import { headers, parseAsLisbon } from "@/lib/utils";
 import { BookingType, bookingsStatus, drivers } from "@/shared/schema";
 import { randomBytes } from "crypto";
 import { eq, inArray } from "drizzle-orm";
@@ -97,7 +97,8 @@ async function updatePickupDatesAsync(
             const primaryDateStr = getPrimaryDate(booking);
             if (!primaryDateStr) continue;
 
-            const primaryDate = new Date(primaryDateStr);
+            const primaryDate = parseAsLisbon(primaryDateStr);
+            if (!primaryDate) continue;
 
             if (isArrival) {
                 // When hasChange is true, always re-set the pickupDate
@@ -161,7 +162,8 @@ async function updatePickupDatesAsync(
 
                     if (!pickupDateStr) return null;
 
-                    const pickupDate = new Date(pickupDateStr);
+                    const pickupDate = parseAsLisbon(pickupDateStr);
+                    if (!pickupDate) return null;
                     await db
                         .update(bookingsStatus)
                         .set({

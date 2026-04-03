@@ -1,5 +1,5 @@
 
-import { headers } from "@/lib/utils";
+import { headers, parseAsLisbon } from "@/lib/utils";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookingsStatus, drivers, locations } from "@/shared/schema";
@@ -33,10 +33,10 @@ export async function GET(
         let pickupDate: Date | null = null;
         if (data.booking?.arrival) {
             const dateStr = data.booking.arrival.pickupdate || data.booking.arrival.arrivaldate;
-            pickupDate = dateStr ? new Date(dateStr) : null;
+            pickupDate = parseAsLisbon(dateStr);
         } else if (data.booking?.departure) {
             const dateStr = data.booking.departure.pickupdate || data.booking.departure.departuredate;
-            pickupDate = dateStr ? new Date(dateStr) : null;
+            pickupDate = parseAsLisbon(dateStr);
         }
 
         // Fetch booking status from database with driver information
