@@ -12,7 +12,7 @@ function formatToDate(date: string): string {
     return `${date}T23:59:59`;
 }
 
-function formatFromDate(date:string): string {
+function formatFromDate(date: string): string {
     if (date.includes('T')) {
         date = date.split('T')[0];
     }
@@ -100,18 +100,18 @@ async function updatePickupDatesAsync(
             const primaryDate = new Date(primaryDateStr);
 
             if (isArrival) {
-                // Update if dates differ or booking changed
-                if (!existing?.pickupDate ||
+                // When hasChange is true, always re-set the pickupDate
+                if (hasChange || !existing?.pickupDate ||
                     existing.pickupDate.getTime() !== primaryDate.getTime()) {
                     directUpdates.push({ ref, newDate: primaryDate, lastActionDate: newLastActionDate, status: newStatus });
                 } else {
                     statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 }
             } else {
-                // Fetch detail if dates differ or booking changed
-                if (!existing?.pickupDate ||
+                // When hasChange is true, always re-fetch departure detail
+                if (hasChange || !existing?.pickupDate ||
                     existing.pickupDate.getTime() !== primaryDate.getTime()) {
-                    detailFetchesNeeded.push({ ref, lastActionDate: newLastActionDate, status: newStatus });
+                    detailFetchesNeeded.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 } else {
                     statusUpdates.push({ ref, status: newStatus, lastActionDate: newLastActionDate });
                 }
