@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { useBookings } from "@/hooks/use-bookings";
+import { useBookings, useClearBookingsCache } from "@/hooks/use-bookings";
 import type { BookingListItem, BookingType } from "@/shared/schema";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { pt } from "date-fns/locale/pt";
-import { Calendar as CalendarIcon, LogIn } from "lucide-react";
+import { Calendar as CalendarIcon, LogIn, RotateCcw } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 
@@ -32,8 +32,10 @@ export default function Dashboard() {
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { data, isLoading, error } = useBookings(activeTab, dateFrom, dateTo, currentPage);
+  const clearCache = useClearBookingsCache();
+  const isManager = user?.roles?.includes("MANAGER") ?? false;
 
   // Reset page when filters change
   const handleDateFromChange = (value: string) => {
@@ -67,9 +69,24 @@ export default function Dashboard() {
 
       <main className="container px-4 sm:px-6 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">Reservas</h1>
-            <p className="text-sm md:text-base text-zinc-400">Gerir transfers diários.</p>
+          <div className="flex items-start gap-3">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">Reservas</h1>
+              <p className="text-sm md:text-base text-zinc-400">Gerir transfers diários.</p>
+            </div>
+            {isManager && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => clearCache.mutate()}
+                disabled={clearCache.isPending}
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white mt-1"
+                title="Limpar cache e recarregar todos os dados"
+              >
+                <RotateCcw className={`h-4 w-4 mr-1.5 ${clearCache.isPending ? 'animate-spin' : ''}`} />
+                Limpar cache
+              </Button>
+            )}
           </div>
 
           {/* Mobile Controls */}

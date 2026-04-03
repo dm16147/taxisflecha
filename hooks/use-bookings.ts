@@ -240,3 +240,38 @@ export function useForceLocation() {
     },
   });
 }
+
+export function useClearBookingsCache() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/bookings/clear-cache", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw await buildRequestError(response, "Falha ao limpar cache", "useClearBookingsCache");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["booking"] });
+      toast({
+        title: "Cache limpo",
+        description: "Os dados serão recarregados com informações atualizadas.",
+      });
+    },
+    onError: (error: Error) => {
+      console.error("useClearBookingsCache mutation failed:", error);
+      toast({
+        title: "Erro ao limpar cache",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
