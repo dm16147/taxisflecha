@@ -10,7 +10,7 @@ export function headers(): Record<string, string> {
     "Accept": "application/json",
     "Content-Type": "application/json",
     "API_KEY": process.env.BASE_API_KEY!,
-    "VERSION": "2026 A"
+    "VERSION": "2025-01"
   }
 }
 
