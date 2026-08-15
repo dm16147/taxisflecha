@@ -198,11 +198,7 @@ export async function retrieveBookings(type: BookingType, dateFrom: string | nul
         const externalApiUrl = new URL(url);
 
         const response = await fetch(externalApiUrl, {
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "API_KEY": process.env.BASE_API_KEY!
-            },
+            headers: headers(),
             cache: "no-store"
         })
 
